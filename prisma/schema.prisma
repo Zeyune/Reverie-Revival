@@ -1,0 +1,309 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Reverie {
+  id          String   @id @default(cuid())
+  title       String
+  mood        String?
+  reflection  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+model AdminUser {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  role         AdminRole      @default(ADMIN)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  sessions     AdminSession[]
+  auditLogs    AuditLog[]
+  stockMoves   StockMovement[]
+}
+
+model AdminSession {
+  id        String    @id @default(cuid())
+  adminId   String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Product {
+  id             String              @id @default(cuid())
+  title          String
+  slug           String              @unique
+  description    String
+  category       String              @default("Uncategorized")
+  details        String              @default("")
+  materials      String              @default("")
+  fit            String              @default("")
+  care           String              @default("")
+  status         ProductStatus       @default(DRAFT)
+  basePrice      Int
+  compareAtPrice Int?
+  tags           String[]
+  seoTitle       String?
+  seoDescription String?
+  deletedAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  images         ProductImage[]
+  variants       Variant[]
+  orderItems     OrderItem[]
+  collections    ProductCollection[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Variant {
+  id                String          @id @default(cuid())
+  productId         String
+  sku               String          @unique
+  size              String
+  color             String
+  priceOverride     Int?
+  stockQty          Int             @default(0)
+  lowStockThreshold Int             @default(0)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  product           Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockMoves        StockMovement[]
+  orderItems        OrderItem[]
+
+  @@index([productId])
+}
+
+model Collection {
+  id          String              @id @default(cuid())
+  name        String
+  slug        String              @unique
+  description String?
+  isFeatured  Boolean             @default(false)
+  sortOrder   Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  products    ProductCollection[]
+}
+
+model ProductCollection {
+  productId    String
+  collectionId String
+  assignedAt   DateTime   @default(now())
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([productId, collectionId])
+  @@index([collectionId])
+}
+
+model Order {
+  id                String            @id @default(cuid())
+  orderNumber       String            @unique
+  customerId        String?
+  email             String
+  phone             String?
+  subtotal          Int
+  shippingFee       Int
+  total             Int
+  paymentStatus     PaymentStatus     @default(UNPAID)
+  paymentDetails    Json?
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  trackingNumber    String?
+  courier           String?
+  shippingAddress   Json
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  items             OrderItem[]
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String?
+  variantId     String?
+  nameSnapshot  String
+  skuSnapshot   String?
+  priceSnapshot Int
+  qty           Int
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant       Variant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  phone     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Settings {
+  id                           String   @id @default("singleton")
+  storeName                    String
+  contactEmail                 String?
+  contactPhone                 String?
+  contactAddress               String?
+  socialLinks                  Json?
+  homepageFeaturedCollectionIds String[] @default([])
+  homepageFeaturedProductIds   String[] @default([])
+  announcementBarText          String?
+  shippingPolicy               String?
+  returnsPolicy                String?
+  privacyPolicy                String?
+  termsPolicy                  String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorAdminId String
+  action       String
+  entityType   String
+  entityId     String
+  diff         Json
+  createdAt    DateTime  @default(now())
+  actor        AdminUser @relation(fields: [actorAdminId], references: [id], onDelete: Cascade)
+
+  @@index([actorAdminId])
+}
+
+model StockMovement {
+  id           String    @id @default(cuid())
+  variantId    String
+  delta        Int
+  reason       String?
+  actorAdminId String?
+  createdAt    DateTime  @default(now())
+  variant      Variant   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  actor        AdminUser? @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+
+  @@index([variantId])
+  @@index([actorAdminId])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model PromoCode {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  description   String
+  discountType  DiscountType
+  discountValue Int
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model VisitorLog {
+  id        String   @id @default(cuid())
+  sessionId String?
+  page      String
+  pageData  String?
+  path      String?
+  host      String?
+  network   String
+  ipAddress String?
+  country   String?
+  region    String?
+  city      String?
+  referrer  String?
+  userAgent String?
+  visitedAt DateTime @default(now())
+
+  @@index([visitedAt])
+  @@index([sessionId])
+  @@index([network])
+}
+
+model RateLimitBucket {
+  id              String    @id @default(cuid())
+  action          String
+  key             String
+  attempts        Int       @default(0)
+  windowStartedAt DateTime
+  lastAttemptAt   DateTime  @default(now())
+  blockedUntil    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([action, key])
+  @@index([action, blockedUntil])
+}
