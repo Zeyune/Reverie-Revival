@@ -1,0 +1,10 @@
+#!/bin/sh
+# Strip AI self-attribution from commit messages so no AI appears as a contributor.
+# Removes "Co-Authored-By: <AI>" trailers and "Generated with <AI>" lines.
+# Genuine human co-authors are preserved (only lines naming an AI vendor are removed).
+#
+# Enabled automatically by `npm install` (see scripts/setup-git-hooks.mjs), which sets
+# core.hooksPath to .githooks. To enable manually: git config core.hooksPath .githooks
+f="$1"
+grep -viE '^Co-authored-by:.*(claude|anthropic|copilot|openai|chatgpt|gpt-|cursor|gemini|codeium|windsurf|bard|llama)|^[[:space:]]*(🤖[[:space:]]*)?Generated with (\[)?(Claude|Cursor|Copilot|Codeium|ChatGPT)' "$f" > "$f.deai"
+mv "$f.deai" "$f"

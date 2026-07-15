@@ -9,6 +9,7 @@
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:seed": "tsx prisma/seed.ts",
+    "prepare": "node scripts/setup-git-hooks.mjs",
     "postinstall": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
