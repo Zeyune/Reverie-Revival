@@ -166,8 +166,16 @@ Two PSI runs, 50 minutes apart, same day, same URL. Lighthouse 13.4.0.
 | **Desktop** | 90 | **100** 🏆 | **95** (−5) |
 | **Mobile** | 70 | **98** | **94** (−4) |
 
-[22:47 run (best)](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=desktop) ·
-[23:37 run (regressed)](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=desktop)
+**PSI runs — both form factors:**
+
+| Run | Result | Desktop | Mobile |
+|---|---|---|---|
+| **22:47 — after Phase 0.5** | 🏆 **100 / 98** | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=desktop) | [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=mobile) |
+| **23:37 — after skeletons** | 95 / 94 (regressed) | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=desktop) | [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=mobile) |
+
+> ⚠️ **PSI links are not durable** — Google expires stored analyses, and they render client-side (so
+> they can't be read programmatically either). **The tables in this report are the permanent record.**
+> Always transcribe the numbers; never rely on the link alone.
 
 **Phase 0.5 hit a real 100 on production.** Not a lab number — PSI, real network, real Vercel.
 The only change between the runs is commit `08f7613` "Add loading skeletons".
@@ -219,8 +227,91 @@ screen readers.
 > headroom, never `score >= 100`** — that outlier would have failed the build and the check would be
 > disabled inside a week.
 
-**Still to confirm:** re-measure on production. Local and prod agreed exactly at 22:47 (both desktop
-100), so local is a decent proxy here — but it's still a proxy.
+### ✅ CONFIRMED ON PRODUCTION — desktop back to 100
+
+Two PSI scans, two minutes apart, post-fix *(clock had rolled past midnight; still this session's work)*:
+
+| | 00:03 `yoj5yj3st8` | 00:05 `almkxsmj5e` |
+|---|---|---|
+| **Desktop** | 98 | **100** ✅ |
+| **Mobile** | 96 | **97** |
+| Accessibility | **100** ⬆ | **100** ⬆ |
+| Best Practices | **96** ⬇ | **96** ⬇ |
+
+[00:05 desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/almkxsmj5e?form_factor=desktop) ·
+[00:05 mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/almkxsmj5e?form_factor=mobile) ·
+[00:03 desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/yoj5yj3st8?form_factor=desktop) ·
+[00:03 mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/yoj5yj3st8?form_factor=mobile)
+
+**Full arc: 90 → 100 → 95 (skeleton regression) → 100 (fixed).** Mobile: 70 → 98 → 94 → 97.
+
+| Metric | Dsk 00:03 | Dsk 00:05 | Mob 00:03 | Mob 00:05 |
+|---|---|---|---|---|
+| FCP | 0.2 s | 0.2 s | 0.9 s | 0.9 s |
+| LCP | 0.6 s | 0.6 s | 2.5 s | 2.5 s |
+| **TBT** | **120 ms** | **10 ms** | 20 ms | 10 ms |
+| CLS | **0** | **0** | **0** | **0** |
+| **SI** | 0.5 s | 0.4 s | **3.9 s** | **2.3 s** |
+| long tasks | 2 | 1 | 1 | 1 |
+
+### 📉 Run-to-run noise is large — quantified
+
+Same commit, same URL, **two minutes apart**:
+- **Desktop TBT: 120 ms → 10 ms** (12×) — worth **2 points**
+- **Mobile SI: 3.9 s → 2.3 s** (1.7×) — worth **2 points**
+
+**Nothing changed but the run.** Combined with the earlier local outlier (85 with TBT 370 ms vs
+95/95/95), the honest reading is **desktop 98-100, mobile 96-97** — a *range*, not a number.
+
+**This is the single strongest argument for PLAN 5.10.** Any budget gating on the aggregate score
+fails randomly. Budget individual metrics with headroom, and median 3+ runs.
+
+### 🆕 Accessibility 96 → 100 — but probably an artifact, not a fix
+
+The contrast failure ("Background and foreground colors do not have a sufficient contrast ratio")
+disappeared, and a11y is now 100 on both form factors.
+
+**Do not mark the contrast item done.** Nothing about the colours changed — the only delta is the
+de-pulsed skeletons. The likely mechanism: **Lighthouse audits the DOM while the skeletons are still
+showing**, so the low-contrast product text (`text-white/60` in `ProductCard.tsx:100`,
+`text-white/40` at `:112`) **isn't in the DOM to fail**. The skeletons hid the problem from the
+auditor; real users still see the text once products load.
+
+**Verify by auditing a page whose content is server-rendered** (post-Phase 1), or by running an axe
+scan after the catalog loads. Left open in MISSING.md deliberately.
+
+### 🆕 Best Practices 100 → 96 — console errors
+
+> **General: Browser errors were logged to the console**
+
+New, and almost certainly **the connection-exhaustion 500s** (`/api/visit`,
+`/api/storefront/products`) — the same errors pasted from the browser console during the incident.
+Lighthouse now scores the pool problem. **Another reason to cap the pool.**
+
+### Mobile: how to get from 97 to 100
+
+Mobile loses ~2-3 points, all to **LCP 2.5 s**. Everything else is perfect (FCP 0.9 s, TBT 10 ms,
+CLS 0, SI 2.3 s at its best). Lighthouse's mobile curve wants **LCP ≈ 1.2 s** for a full 25/25, so
+2.5 s → 1.2 s is the whole job.
+
+The LCP phase data (measured locally) says where it goes: **load delay 0 ms** ✅, load time ~395 ms,
+**render delay ~2 s** — the hero image arrives quickly and then waits. Note TBT is only 10 ms, so
+this is **not** main-thread saturation; it's that nothing can paint until the client bundle boots.
+
+| Fix | Buys | Phase |
+|---|---|---|
+| **Server-render the catalog** — LCP render-delay is hydration-bound; the only real fix is less client JS to boot before first paint | The bulk of the 1.3 s | **Phase 1** |
+| **Render-blocking requests — 120-140 ms** (the CSS chunk). Inline critical CSS / trim `globals.css` | ~120 ms | small, independent |
+| **Legacy JavaScript — 14 KiB.** Modern browserslist target drops the transpiled polyfills | ~14 KiB parse+exec | small, independent |
+| **Reduce unused JavaScript — 25 KiB.** Code-split the storefront | bundle | **Phase 1** |
+
+**Honest read: mobile 100 needs Phase 1.** The two independent wins (~135 ms + 14 KiB) might take
+LCP to ~2.2-2.3 s — better, still not 25/25. **Don't chase mobile 100 before Phase 1**; the routing
+migration is doing this work anyway.
+
+*(Also note: "Improve image delivery" collapsed from **962 KiB → 7 KiB**. Not a win — it means the
+audit ran while skeletons were up, so the Unsplash product images never loaded. The 1.2 MB is still
+there for real users. Same masking effect as the a11y score.)*
 
 ### ❌ Correction — I retired this hypothesis for the wrong reason
 

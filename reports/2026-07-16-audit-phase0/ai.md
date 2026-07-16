@@ -127,6 +127,14 @@ Two runs, 50 min apart. **Only delta = commit `08f7613` "Add loading skeletons".
 | Desktop | 90 | **100** 🏆 | **95** (−5) |
 | Mobile | 70 | **98** | **94** (−4) |
 
+| Run | PSI (append `?form_factor=desktop` / `=mobile`) |
+|---|---|
+| 22:47 (best) | `pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7` |
+| 23:37 (regressed) | `pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc` |
+
+⚠️ **PSI links expire and are client-rendered — unreadable via WebFetch, and Google drops old
+analyses. The tables here are the record.** Transcribe numbers; never cite the link alone.
+
 | Metric | Dsk 22:47 | Dsk 23:37 | Mob 22:47 | Mob 23:37 |
 |---|---|---|---|---|
 | FCP | 0.3s | 0.3s | 0.9s | 0.9s |
@@ -163,6 +171,61 @@ block at the top of that file.
 **Noise datum for 5.10:** one mobile run = **85, TBT 370ms**; three re-runs = **95/95/95, TBT
 50-70ms**. TBT swings hard on a loaded machine. **Budget individual metrics with headroom, NEVER
 `score >= 100`** — that outlier would red-build a correct commit.
+
+## ✅ CONFIRMED ON PROD — desktop 100 restored
+
+Two PSI scans **2 min apart**, post-fix. Full arc: **90 → 100 → 95 (skeleton) → 100 (fixed)**.
+Mobile: **70 → 98 → 94 → 97**.
+
+| | 00:03 `yoj5yj3st8` | 00:05 `almkxsmj5e` |
+|---|---|---|
+| Desktop | 98 | **100** ✅ |
+| Mobile | 96 | **97** |
+| A11y | **100** ⬆ | **100** ⬆ |
+| BestPractices | **96** ⬇ | **96** ⬇ |
+
+| Metric | Dsk 00:03 | Dsk 00:05 | Mob 00:03 | Mob 00:05 |
+|---|---|---|---|---|
+| FCP | 0.2s | 0.2s | 0.9s | 0.9s |
+| LCP | 0.6s | 0.6s | 2.5s | 2.5s |
+| **TBT** | **120ms** | **10ms** | 20ms | 10ms |
+| CLS | 0 | 0 | 0 | 0 |
+| **SI** | 0.5s | 0.4s | **3.9s** | **2.3s** |
+
+**NOISE, QUANTIFIED (same commit, 2 min apart):** desktop TBT **120ms→10ms** (12×, worth 2 pts) ·
+mobile SI **3.9s→2.3s** (1.7×, worth 2 pts). **Honest range: desktop 98-100, mobile 96-97.** Report
+ranges, not points. Strongest possible argument for 5.10's "metrics with headroom, median 3+ runs".
+
+## ⚠️ TWO SCORE MOVES THAT ARE ARTIFACTS — do not act on them
+
+| Signal | Looks like | Actually |
+|---|---|---|
+| **A11y 96 → 100** | contrast fixed | **NOT fixed.** No colours changed. Lighthouse audits the DOM **while skeletons are up**, so the low-contrast product text (`ProductCard.tsx:100` `text-white/60`, `:112` `text-white/40`) **isn't present to fail**. Real users still see it. **Leave the MISSING.md item open.** Verify post-Phase-1 or with an axe scan after load |
+| **"Improve image delivery" 962 KiB → 7 KiB** | images fixed | **NOT fixed.** Same masking — the audit ran before the Unsplash product images loaded. **The 1.2 MB is still there.** `next/image` (Phase 4) still required |
+
+**Rule:** with skeletons up, Lighthouse may never see product-dependent DOM. **Any audit that scores
+product content is suspect until the catalog is server-rendered (Phase 1).**
+
+## 🆕 Best Practices 100 → 96 — "Browser errors were logged to the console"
+
+Almost certainly the **connection-exhaustion 500s** (`/api/visit`, `/api/storefront/products`).
+Lighthouse now scores the pool bug. Another reason to cap the pool.
+
+## Mobile 97 → 100: what it takes
+
+Loses ~2-3, **all to LCP 2.5s** (needs ≈1.2s for 25/25). Everything else perfect. LCP phases: load
+delay **0ms** ✅, load time ~395ms, **render delay ~2s**. TBT is 10ms → **not** main-thread
+saturation; nothing paints until the client bundle boots.
+
+| Fix | Buys | Phase |
+|---|---|---|
+| **Server-render the catalog** (less client JS before first paint) | most of the 1.3s | **Phase 1** |
+| Render-blocking CSS chunk (**120-140ms**) — inline critical CSS / trim globals.css | ~120ms | small, independent |
+| Legacy JS **14 KiB** — modern browserslist target drops polyfills | ~14 KiB | small, independent |
+| Unused JS **25 KiB** — code-split storefront | bundle | **Phase 1** |
+
+**Mobile 100 needs Phase 1.** The two independent wins get LCP to ~2.2-2.3s, not 1.2s. **Do not
+chase mobile 100 before Phase 1** — the routing migration does this work anyway.
 
 **Proven good:** hero fix real-world (desktop LCP **0.5s** @22:47) · CLS **0** throughout, skeletons
 did NOT break it · FCP perfect both · render-blocking **905ms → 20-40ms**.

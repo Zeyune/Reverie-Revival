@@ -58,6 +58,10 @@ now come from your own site.
 | Phone | 70 | **98** |
 | Desktop | 90 | **100** 🏆 |
 
+*See it yourself: [the 100 run — desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=desktop) ·
+[phone](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=mobile).
+Google deletes these after a while, so the numbers above are the lasting record.*
+
 **A perfect 100 on desktop, on the real site.** The main image now appears in **half a second** —
 it used to take five and a half seconds on a phone.
 
@@ -80,10 +84,44 @@ without the cost:
 | Desktop | 95 | **100** ✅ |
 | Phone | 94 | **95** |
 
-**Desktop is back to a perfect 100.**
+**Confirmed on the real live site:**
 
-I'd rather tell you I cost you 5 points than let it quietly sit there. *(These last figures are from
-the development machine — worth one more real test on the live site to confirm.)*
+| | Before everything | Best | After my mistake | **Fixed** |
+|---|---|---|---|---|
+| Desktop | 90 | 100 | 95 | **100** 🏆 |
+| Phone | 70 | 98 | 94 | **97** |
+
+**Desktop is back to a perfect 100**, measured on the live site — not the development machine.
+
+I'd rather tell you I cost you 5 points than let it quietly sit there.
+
+### About that phone score
+
+The phone sits at **97**, and the last 3 points aren't worth chasing yet. They're all waiting on one
+thing: the big rebuild of how pages are delivered (already the next major job on the plan). That
+rebuild is what lets the shop send finished pages instead of assembling them in the visitor's phone —
+which is also what fixes Google not being able to see your products. **One job, three payoffs.**
+
+### A word on these numbers being jumpy
+
+Two scans **two minutes apart**, with *nothing changed in between*, gave desktop **98 and 100**, and
+phone **96 and 97**. That's normal — the test runs on shared machines and its own timing wobbles.
+
+So the honest answer is **"desktop 98-100, phone 96-97"**, not a single number. Don't panic at a 98,
+and don't celebrate a single 100 too hard. It's the trend that means anything.
+
+### Two scores that look better than they are
+
+- **Accessibility jumped to 100.** Don't trust it. Nothing about the colours changed — the test just
+  happens to check the page while the grey placeholders are still up, so it never sees the faint text
+  it was complaining about. Real visitors still see that text. It stays on the to-do list.
+- **The "photos are too big" warning nearly vanished** (1.2 MB → 7 KB) for the same reason: the test
+  finished before your photos loaded. **The photos are still too big.** Still on the list.
+
+### One score got worse: 100 → 96 on "Best Practices"
+
+Because errors are showing up in the browser — the database connection problem from earlier tonight.
+The speed test is now noticing it too. Another reason it's the first job tomorrow.
 
 Worth noting: **the page never had a "jumping content" problem**, before or after. That was measured
 both times and it's perfect — no time was spent on a problem you didn't have.

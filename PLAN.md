@@ -122,13 +122,53 @@ for the last unit produce exactly one order and `stockQty: 0`, never `-1`.
 
 ## Phase 0.5 — Performance: fix LCP · **S** · ✅ DONE (2026-07-16), pending a deploy re-measure
 
-**Measured on PRODUCTION (PSI, Lighthouse 13.4.0) — Phase 0.5 hit 100:**
+**Measured on PRODUCTION (PSI, Lighthouse 13.4.0). Full arc:**
 
-| | Mobile | Desktop |
+| | Mobile | Desktop | PSI run |
+|---|---|---|---|
+| Before | 70 | 90 | — |
+| After Phase 0.5 (22:47) | 98 | **100** 🏆 | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=desktop) · [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=mobile) |
+| After skeletons (23:37) — regression | 94 | 95 | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=desktop) · [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=mobile) |
+| **After de-pulse fix (00:05)** | **97** | **100** ✅ | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/almkxsmj5e?form_factor=desktop) · [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/almkxsmj5e?form_factor=mobile) |
+| *(same, 2 min earlier — noise)* | *96* | *98* | [desktop](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/yoj5yj3st8?form_factor=desktop) · [mobile](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/yoj5yj3st8?form_factor=mobile) |
+
+> **State the range, not the point: desktop 98-100, mobile 96-97.** Two scans two minutes apart on
+> *identical code* moved desktop TBT **120 ms → 10 ms** and mobile SI **3.9 s → 2.3 s** — 2 points
+> each, from nothing but run-to-run variance.
+
+*PSI links expire — the numbers here are the durable record. Full breakdown:
+[reports/2026-07-16-audit-phase0/dev.md](reports/2026-07-16-audit-phase0/dev.md).*
+
+### Mobile 97 → 100 needs Phase 1 — don't chase it before then
+
+Mobile loses everything to **LCP 2.5 s** (needs ≈1.2 s for 25/25); FCP, TBT, CLS and SI are all
+perfect. LCP phases: load delay **0 ms** ✅, load time ~395 ms, **render delay ~2 s**. TBT is 10 ms,
+so this is *not* main-thread saturation — nothing can paint until the client bundle boots.
+
+| Fix | Buys | Where |
 |---|---|---|
-| Before | 70 | 90 |
-| **After Phase 0.5 (22:47)** | **98** | **100** 🏆 |
-| After skeletons (23:37) | 94 | 95 |
+| **Server-render the catalog** | most of the 1.3 s | **Phase 1** |
+| Render-blocking CSS chunk (120-140 ms) — inline critical CSS | ~120 ms | small, independent |
+| Legacy JS (14 KiB) — modern browserslist target | ~14 KiB | small, independent |
+| Unused JS (25 KiB) — code-split | bundle | **Phase 1** |
+
+The two independent wins land LCP at ~2.2-2.3 s, not 1.2 s. **Phase 1 is the fix, and it's doing this
+work anyway.**
+
+### ⚠️ Skeletons mask two audits — don't trust these scores
+
+With placeholders up, **Lighthouse may finish auditing before product content exists**:
+- **A11y 96 → 100** — the contrast failure vanished. Nothing about the colours changed; the
+  low-contrast product text simply wasn't in the DOM to fail. **Still broken for real users.**
+- **"Improve image delivery" 962 KiB → 7 KiB** — the Unsplash images never loaded during the audit.
+  **The 1.2 MB is still there.**
+
+**Any audit scoring product-dependent DOM is suspect until Phase 1 server-renders it.**
+
+### 🆕 Best Practices 100 → 96 — "Browser errors were logged to the console"
+
+The connection-exhaustion 500s. **Lighthouse is now scoring the pool bug** — one more reason it's the
+next thing to fix.
 
 **Phase 0.5 achieved a genuine 100 on production.** Then commit `08f7613` (loading skeletons) cost
 **5 desktop / 4 mobile** — see the regression below.

@@ -61,6 +61,10 @@ Every report, in all three versions (adapted to the audience):
 - **What changed** — and why.
 - **✅ Verified** — **with the command that produced each result.** `Mobile 95` is a claim.
   `Mobile 95 — npx lighthouse@12 ... against a local prod build` is a fact someone can re-run.
+  **Link the evidence too** (PageSpeed run, CI job, dashboard) — *and transcribe the numbers anyway.*
+  External links rot: PSI expires stored analyses and renders client-side, so a link alone is both
+  unreadable to an agent and gone in a month. **The report is the durable record; the link is a
+  courtesy.**
 - **⚠️ Provisional** — anything measured in a way that needs redoing (e.g. localhost numbers that
   need a re-check against production). Say so loudly.
 - **❌ Corrections** — **any earlier claim, in any doc or report, that turned out to be false.**

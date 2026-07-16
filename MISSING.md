@@ -216,12 +216,16 @@ Working tracker. Check off items as they get done.
 
 ## 🟢 Low / polish
 
-- [ ] **🆕 Accessibility: insufficient colour contrast** — Lighthouse scores a11y **96** on both
-      mobile and desktop, failing only the contrast check: *"Background and foreground colors do not
+- [ ] **🆕 Accessibility: insufficient colour contrast** — *"Background and foreground colors do not
       have a sufficient contrast ratio."* Predictable for a dark theme leaning on `text-white/60` and
-      `text-white/40` (e.g. `ProductCard.tsx:100,112`, `Footer.tsx:112`). Cheap, and it's the only
-      thing between you and 100. *(Measured 2026-07-16 — full PSI run in
-      [reports/2026-07-16-audit-phase0/dev.md](reports/2026-07-16-audit-phase0/dev.md).)*
+      `text-white/40` (e.g. `ProductCard.tsx:100,112`, `Footer.tsx:112`).
+      > ⚠️ **Lighthouse now reports a11y 100 — ignore that; it's masked, not fixed.** The score moved
+      > 96 → 100 the moment loading skeletons shipped. No colour changed. Lighthouse audits the DOM
+      > **while the skeletons are still up**, so the offending product text isn't present to fail.
+      > Real users still see it once the catalog loads. **Re-check after Phase 1 server-renders the
+      > products, or run an axe scan after load.** Same masking hides the 1.2 MB image-delivery
+      > warning. *(Measured 2026-07-16/17 — see
+      > [reports/2026-07-16-audit-phase0/dev.md](reports/2026-07-16-audit-phase0/dev.md).)*
 - [ ] **`ShopPage` hardcodes sizes/colors** (`:38-44`) instead of deriving them from the loaded
       catalog, so filters can offer options no product has — and miss ones they do.
       *(The sort-mutation and missing-dep bugs in this file were fixed in Phase 0.)*
