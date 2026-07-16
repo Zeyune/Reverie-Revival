@@ -53,7 +53,7 @@ a flag on every invocation. That's not clutter you can fix; that's the cost of t
 | `MISSING.md` | tracked | **→ `docs/`** |
 | `MISSING-ARCHIVE.md` | untracked | **→ `docs/`** |
 | `PLAN.md` | untracked | **→ `docs/`** |
-| `REPORT.md` | untracked | **→ `docs/incidents/2026-07-16-products-not-displaying.md`** |
+| ~~`REPORT.md`~~ | ✅ **DONE 2026-07-16** | → `reports/2026-07-15-db-outage/dev.md` (**not** `docs/incidents/` — superseded, see below) |
 | `middleware.ts` | tracked | **→ `src/middleware.ts`** |
 | `README.md` | tracked | Stay — the front door |
 | `AGENTS.md` | tracked | Stay — agents look for it at root, by convention |
@@ -137,7 +137,8 @@ files that don't exist. The tracker points at a plan nobody else can see.
 mkdir -p docs/incidents
 git mv MISSING.md docs/MISSING.md
 mv MISSING-ARCHIVE.md PLAN.md docs/
-mv REPORT.md docs/incidents/2026-07-16-products-not-displaying.md
+# REPORT.md: already done, and to a different home —
+#   git mv REPORT.md reports/2026-07-15-db-outage/dev.md
 ```
 
 (`git mv` for the tracked one, plain `mv` for the untracked three.)
@@ -157,8 +158,19 @@ Either is fine. The current in-between state — tracked file linking to untrack
 that's actually broken.
 
 `REPORT.md` is a solved incident (the Supabase/products-not-displaying one). It's history, not a
-tracker. Filing it under `docs/incidents/` with a dated name is what keeps it findable in two years
-without sitting at the root pretending to be current.
+tracker. Filing it under a dated name is what keeps it findable in two years without sitting at the
+root pretending to be current.
+
+> ✅ **Done 2026-07-16 — but to `reports/`, not `docs/incidents/`.** The reasoning above was right;
+> the destination changed. It now lives at **`reports/2026-07-15-db-outage/dev.md`**, alongside
+> `client.md` and `ai.md` versions for non-technical readers and AI agents.
+>
+> `reports/` is a **by-date log of every session**, not just incidents, so a separate
+> `docs/incidents/` would have split the same kind of content across two places. It's also dated
+> **07-15**, not 07-16 — the work was done on the 15th and written up after midnight.
+>
+> See [`reports/README.md`](../reports/README.md) and
+> [`AGENTS.md → Session reports`](../AGENTS.md#session-reports-required).
 
 ---
 

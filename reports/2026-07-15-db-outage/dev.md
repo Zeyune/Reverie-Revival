@@ -1,6 +1,8 @@
-# Incident Report — Storefront Products Not Displaying
+# 2026-07-15 — Storefront products not displaying
 
-**Date:** 2026-07-16
+**Audience:** developers · see [client.md](client.md) for the plain-English version, [ai.md](ai.md) for the dense one
+**Status:** ✅ resolved — both environments serving the full catalog
+**Date:** 2026-07-15 *(written after midnight, so the original file was stamped the 16th)*
 **Project:** Reverie Revival (Next.js 16 App Router + Prisma → Supabase Postgres)
 **Affected:** Storefront product catalog (`/`, `/shop`) on both local and production (Vercel)
 
