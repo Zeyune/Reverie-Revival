@@ -11,6 +11,20 @@ import { Pool } from "pg";
  */
 export const TEST_PREFIX = "__test__";
 
+/**
+ * Keep this modest. Against Supabase's session-mode pooler the whole project
+ * shares a **pool_size of 15**, and Supavisor holds idle connections for a while
+ * after a client goes away — so a dev server you started earlier still counts.
+ * Ask for too many and the suite dies with:
+ *
+ *   DriverAdapterError: (EMAXCONNSESSION) max clients reached in session mode
+ *
+ * It only has to exceed the stock under test to prove the race; it does not have
+ * to be large. CI is unaffected (throwaway Postgres allows ~100), but the local
+ * run is the one people actually watch.
+ */
+export const TEST_POOL_MAX = 6;
+
 export function createTestClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -19,7 +33,7 @@ export function createTestClient() {
 
   // max must exceed the concurrency under test, or the "concurrent" writers
   // queue on the pool and serialise — which would make a broken decrement pass.
-  const pool = new Pool({ connectionString, max: 10 });
+  const pool = new Pool({ connectionString, max: TEST_POOL_MAX });
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
   return { prisma, pool };

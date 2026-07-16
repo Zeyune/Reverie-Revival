@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { StorefrontProduct } from '../data/storefront';
 import { ProductCard } from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/Skeleton';
 import { Heart } from 'lucide-react';
 
 interface WishlistPageProps {
@@ -18,8 +19,22 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({
   const { wishlist } = useStore();
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading wishlist...
+      <div className="min-h-screen py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12 text-center">
+            <h1
+              className="mb-4 tracking-[0.3em]"
+              style={{
+                fontFamily: "var(--font-poppins), sans-serif",
+                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              }}
+            >
+              WISHLIST
+            </h1>
+          </div>
+          {/* Count matches what's saved locally, so the grid doesn't resize on load. */}
+          <ProductGridSkeleton count={Math.max(wishlist.length, 1)} />
+        </div>
       </div>
     );
   }

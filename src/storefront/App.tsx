@@ -74,6 +74,7 @@ export default function App() {
             onNavigate={handleNavigate}
             products={products}
             categories={categoriesWithAll}
+            isLoading={isLoading}
           />
         );
       
@@ -112,6 +113,7 @@ export default function App() {
             onNavigate={handleNavigate}
             products={products}
             categories={categoriesWithAll}
+            isLoading={isLoading}
           />
         );
       
@@ -142,6 +144,7 @@ export default function App() {
             onNavigate={handleNavigate}
             products={products}
             categories={categoriesWithAll}
+            isLoading={isLoading}
           />
         );
     }

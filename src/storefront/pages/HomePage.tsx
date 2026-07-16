@@ -1,6 +1,7 @@
 import React from 'react';
 import { Hero } from '../components/Hero';
 import { ProductCard } from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/Skeleton';
 import { StorefrontProduct, StorefrontCategory, testimonials } from '../data/storefront';
 import { Star, Mail } from 'lucide-react';
 
@@ -8,29 +9,34 @@ interface HomePageProps {
   onNavigate: (page: string, productId?: string) => void;
   products: StorefrontProduct[];
   categories: StorefrontCategory[];
+  isLoading?: boolean;
 }
+
+const NEW_ARRIVALS_COUNT = 4;
+const BEST_SELLERS_COUNT = 8;
 
 export const HomePage: React.FC<HomePageProps> = ({
   onNavigate,
   products,
   categories,
+  isLoading,
 }) => {
-  // Deliberately NOT gated on isLoading.
+  // isLoading gates the product grids ONLY — never the whole page.
   //
-  // This used to return "Loading products..." on a blank screen until the
-  // catalog fetch resolved, which meant the Hero — the largest element on the
-  // page, and the one that has nothing to do with products — only rendered
-  // after the JS bundle downloaded, React hydrated, and Supabase answered. The
-  // hero image sat behind a database round-trip: ~4s of LCP "load delay".
+  // This component used to `return` a full-screen "Loading products..." until
+  // the catalog fetch resolved, which meant the Hero — the largest element on
+  // the page, and the one thing here that has nothing to do with products —
+  // couldn't render until the JS bundle downloaded, React hydrated, and
+  // Supabase answered. The hero image sat behind a database round-trip: ~4s of
+  // LCP "load delay". Rendering it unconditionally puts its <img> in the server
+  // HTML where the preload scanner finds it in the first bytes.
   //
-  // Rendering unconditionally puts the Hero in the server HTML, so the preload
-  // scanner finds its <img> in the first bytes and starts fetching immediately.
-  //
-  // The three product-dependent sections below are all beneath a 90vh hero, so
-  // they fill in off-screen and cost no layout shift. `products` starts as [],
-  // so these are safe before the fetch lands.
-  const newArrivals = products.filter((p) => p.badge === 'new').slice(0, 4);
-  const bestSellers = products.slice(0, 8);
+  // The grids below show skeletons instead. Those skeletons are load-bearing in
+  // two ways: without them these sections render a heading over an empty gap and
+  // look broken, and because they're sized to match ProductCard they also stop
+  // the section changing height when the real cards arrive.
+  const newArrivals = products.filter((p) => p.badge === 'new').slice(0, NEW_ARRIVALS_COUNT);
+  const bestSellers = products.slice(0, BEST_SELLERS_COUNT);
 
   return (
     <div className="min-h-screen">
@@ -107,11 +113,15 @@ export const HomePage: React.FC<HomePageProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-            ))}
-          </div>
+          {isLoading ? (
+            <ProductGridSkeleton count={NEW_ARRIVALS_COUNT} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {newArrivals.map((product) => (
+                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -134,11 +144,15 @@ export const HomePage: React.FC<HomePageProps> = ({
             Customer favorites
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-            ))}
-          </div>
+          {isLoading ? (
+            <ProductGridSkeleton count={BEST_SELLERS_COUNT} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {bestSellers.map((product) => (
+                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

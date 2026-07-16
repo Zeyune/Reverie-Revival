@@ -4,6 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { useToast } from '../context/ToastContext';
 import { Heart, ChevronDown, ShoppingCart, Truck, RotateCcw, Shield } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
+import { ProductDetailSkeleton } from '../components/Skeleton';
 
 interface ProductDetailPageProps {
   productId: string;
@@ -32,11 +33,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   // before them means the loading render calls fewer hooks than the loaded one
   // and the next render throws "Rendered fewer hooks than expected".
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading product...
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) {

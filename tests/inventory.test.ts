@@ -9,7 +9,11 @@ import {
 import type { PrismaClient } from "../src/generated/prisma/client";
 import type { Pool } from "pg";
 
-const CONCURRENCY = 8;
+// Only has to exceed the stock under test to force the race — 5 against 1 unit
+// proves it exactly as well as 50 would, and stays inside the shared Supabase
+// pooler budget (see TEST_POOL_MAX). Verified by mutation: a read-then-write
+// decrement still fails these.
+const CONCURRENCY = 5;
 
 let prisma: PrismaClient;
 let pool: Pool;
@@ -62,9 +66,9 @@ describe("reserveStock", () => {
 
   // The regression test. With a read-then-write decrement, every one of these
   // transactions reads stockQty=1 before any of them writes, so all 8 "succeed"
-  // and stock lands at -7. A conditional decrement makes Postgres re-check the
+  // and stock goes negative. A conditional decrement makes Postgres re-check the
   // predicate under the row lock, so exactly one can win.
-  it("lets exactly one of 8 concurrent buyers take the last unit", async () => {
+  it("lets exactly one of N concurrent buyers take the last unit", async () => {
     const { variant } = await createStockFixture(prisma, {
       stockQty: 1,
       tag: "reserve-race",

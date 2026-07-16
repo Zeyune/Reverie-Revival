@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ProductCard } from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/Skeleton';
 import { StorefrontProduct, StorefrontCategory } from '../data/storefront';
 import { SlidersHorizontal } from 'lucide-react';
 
@@ -104,10 +105,32 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   // Must stay below every hook. React matches hooks by call order, so returning
   // before them means the loading render calls fewer hooks than the loaded one
   // and the next render throws "Rendered fewer hooks than expected".
+  //
+  // Keeps the page's own chrome (heading, filters) so the layout doesn't jump —
+  // only the grid is a placeholder.
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading products...
+      <div className="min-h-screen py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12 text-center">
+            <h1
+              className="mb-4 tracking-[0.3em]"
+              style={{
+                fontFamily: "var(--font-poppins), sans-serif",
+                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              }}
+            >
+              SHOP ALL
+            </h1>
+            <p
+              className="text-white/60"
+              style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
+            >
+              Discover your next favorite piece
+            </p>
+          </div>
+          <ProductGridSkeleton count={8} />
+        </div>
       </div>
     );
   }
