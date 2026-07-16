@@ -157,6 +157,135 @@ The hero image was queued behind a database round-trip it has nothing to do with
 **Mutation-tested** (revert the fix, confirm the test fails): missing `useMemo` dep ✅, discount clamp
 ✅, cross-tab listener ✅, promo persistence ✅.
 
+## 📊 PageSpeed — production. **PHASE 0.5 HIT 100/98, THEN THE SKELETONS COST 5/4**
+
+Two PSI runs, 50 minutes apart, same day, same URL. Lighthouse 13.4.0.
+
+| | Baseline | **22:47 — after Phase 0.5** | **23:37 — after skeletons** |
+|---|---|---|---|
+| **Desktop** | 90 | **100** 🏆 | **95** (−5) |
+| **Mobile** | 70 | **98** | **94** (−4) |
+
+[22:47 run (best)](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/hxv5c23tv7?form_factor=desktop) ·
+[23:37 run (regressed)](https://pagespeed.web.dev/analysis/https-reverie-revival-vercel-app/vxyfpeukoc?form_factor=desktop)
+
+**Phase 0.5 hit a real 100 on production.** Not a lab number — PSI, real network, real Vercel.
+The only change between the runs is commit `08f7613` "Add loading skeletons".
+
+### The regression, per metric
+
+| Metric | Desktop 22:47 | Desktop 23:37 | Mobile 22:47 | Mobile 23:37 |
+|---|---|---|---|---|
+| FCP | 0.3 s | 0.3 s | 0.9 s | 0.9 s |
+| LCP | **0.5 s** | 0.6 s | **2.5 s** | 2.8 s |
+| **TBT** | **70 ms** | **170 ms** 🔴 | **0 ms** | 20 ms |
+| CLS | 0 | 0 | 0 | 0 |
+| **SI** | **0.8 s** | 1.0 s | **1.8 s** | **4.1 s** 🔴 |
+| long tasks | **1** | **3** 🔴 | *(none)* | **2** 🔴 |
+
+**Insights that appear only in the 23:37 run:** `Optimize DOM size` · `Forced reflow` ·
+`Layout shift culprits`
+
+### Cause: the skeletons (mine)
+
+1. **`animate-pulse` on 96 elements → Speed Index.** SI scores how quickly the page *stops changing*.
+   A pulse never stops, so it never looks settled. **Mobile SI 1.8 → 4.1 s.**
+2. **SSR HTML 17 KB → 57 KB → TBT.** 96 extra elements is more hydration work: **1 → 3 long tasks**,
+   **+100 ms** desktop blocking. Hence the new `Optimize DOM size` insight.
+
+### ✅ Fix applied — de-pulsed the skeletons
+
+Removed `animate-pulse` entirely (static tint) and cut elements per card (~8 → 5). Dimensions
+untouched, so CLS is unaffected.
+
+| | With pulse | **De-pulsed** |
+|---|---|---|
+| Desktop | 95 (prod) | **100** (local, was 100 in prod pre-skeleton) |
+| Mobile | 94 (prod) | **95** (local, 3 runs: 95/95/95) |
+| Desktop TBT | 170 ms | **0 ms** |
+| Desktop long tasks | 3 | **1** |
+| **Mobile SI** | **4.1 s** | **0.8 s** |
+| CLS | 0 | **0** ✅ |
+| `animate-pulse` els | 96 | **0** |
+| SSR HTML | 57 KB | 52.5 KB |
+
+**Do not add an animation back** — see the comment block at the top of `Skeleton.tsx`. Not
+`animate-pulse`, not a shimmer sweep. The shape alone reads as loading, and `sr-only` text covers
+screen readers.
+
+> **Noise warning, worth internalising for 5.10:** one mobile run came back **85 with TBT 370 ms** —
+> a pure outlier. Three consecutive re-runs gave **95/95/95, TBT 50-70 ms**. On a busy machine TBT
+> swings wildly. **This is exactly why a Lighthouse CI budget must assert individual metrics with
+> headroom, never `score >= 100`** — that outlier would have failed the build and the check would be
+> disabled inside a week.
+
+**Still to confirm:** re-measure on production. Local and prod agreed exactly at 22:47 (both desktop
+100), so local is a decent proxy here — but it's still a proxy.
+
+### ❌ Correction — I retired this hypothesis for the wrong reason
+
+I flagged the skeletons as an SI risk, then looked at desktop SI (1.0 s, "perfect"), concluded
+*"so they didn't"*, and moved on. **That was one absolute number read as if it were a trend.**
+Desktop SI had already gone 0.8 → 1.0, and mobile SI had **more than doubled**. The comparison run
+existed; I just hadn't seen it.
+
+**Lesson (again): a metric is only meaningful against its own history.** "1.0 s is perfect" and
+"1.0 s is 25% worse than yesterday" are both true, and only the second one is the finding.
+
+### Also wrong: "the lab was optimistic"
+
+I attributed desktop 100 → 95 to localhost flattering the numbers. **It didn't** — production
+independently scored 100 at 22:47. Localhost and production agreed. The drop was a real regression I
+shipped 50 minutes later.
+
+### What the numbers prove
+
+- **Desktop LCP 0.6 s = perfect.** The hero fix (WebP + `<img fetchPriority="high">` + ungating)
+  worked exactly as designed. Load delay is gone in the real world, not just the lab.
+- **CLS 0 on both — the skeletons did not break it.** Matching ProductCard's dimensions paid off.
+- **FCP perfect on both.** The `next/font` fix landed.
+
+### Where the remaining points go
+
+**Desktop loses ~5 to TBT alone (170 ms, "3 long tasks").** Mobile loses 4 to LCP + 2 to SI.
+
+**The diagnostic oddity: desktop TBT 170 ms vs mobile 20 ms** — backwards, despite mobile being 4×
+CPU-throttled. Explanation: on slow 4G the JS trickles in and executes in small chunks; on fast
+desktop it all arrives at once and hydrates in **one burst** → long tasks. **Same root cause as
+mobile's LCP render-delay: the whole storefront is a client bundle that must hydrate before
+anything settles.** → **Phase 1.**
+
+### PSI's own insights name the existing plan
+
+| Insight | Ours |
+|---|---|
+| **Improve image delivery — 1,204 KiB** (desktop) / 962 KiB (mobile) | **Biggest single item left.** Unsplash product images at 1080px → `next/image` (Phase 4) |
+| Avoid long main-thread tasks (3 desktop / 2 mobile) | Client-bundle hydration → Phase 1 |
+| Reduce unused JavaScript (25 KiB) · Legacy JavaScript (14 KiB) | Bundle → Phase 1 / 5.10 budget |
+| Optimize DOM size | 57 KB SSR HTML — skeletons are 96 elements of it |
+| Render-blocking requests (20 ms desktop / 130 ms mobile) | Down from **905 ms**. Mostly resolved |
+
+### ⚠️ Don't trust the other scores
+
+- **SEO 100 is a lie of omission.** Lighthouse checks title/crawlability/structured data. It
+  **cannot see that every storefront page shares one URL**. Do not let this score argue against
+  Phase 1.
+- **🆕 Accessibility 96 — insufficient colour contrast.** First time measured. Not yet in MISSING.md.
+- Best Practices 100 — but its Trust & Safety section flags **CSP, COOP, XFO, Trusted Types**, which
+  is the security-headers item (PLAN 5.2) it doesn't score.
+
+### Caveat on this run
+
+Taken while the connection pool was still degraded (12/15 held, catalog API TTFB **1.0-2.4 s** vs
+~300 ms healthy). The homepage HTML itself was fast (TTFB 0.21-0.29 s) and the API isn't on the LCP
+path any more, so the impact is probably small — but **re-measure once the pool is capped** to be sure.
+
+**Hypothesis not needed after all:** the skeletons were suspected of hurting Speed Index (96
+`animate-pulse` elements never letting the page visually settle). Desktop SI came back **1.0 s,
+perfect** — so they didn't. They may contribute to desktop TBT via hydration work; unproven, and the
+DOM-size insight is the only hint. *(Ruled out separately: skeletons animating forever on API
+failure — `App.tsx:50-52` has `finally { setIsLoading(false) }`.)*
+
 ## ⚠️ Provisional — needs re-measuring
 
 **The Lighthouse numbers are from a local production build, so they're optimistic.** Localhost has no
@@ -182,6 +311,70 @@ Five, all from reading code rather than running it. Recorded so nobody re-derive
 
 Also caught mid-session: the first Lighthouse run measured the **dev server** (an old process still
 held :3000). Dev numbers are meaningless — rebuilt clean and re-measured.
+
+## 🔥 INCIDENT — production down for ~10 min (connection exhaustion)
+
+**Resolved.** But this is the important entry in this report, because the risk logged below stopped
+being theoretical about twenty minutes after it was written.
+
+**Symptom:** every DB route 500ing in production.
+```
+POST /api/visit                    -> 500
+GET  /api/storefront/products      -> 500
+Error: Failed to load storefront data.
+DriverAdapterError: (EMAXCONNSESSION) max clients reached in session mode — pool_size: 15
+```
+
+**Cause — two things at once:**
+
+1. **8 orphaned connections from local Lighthouse benchmarking.** Every dev/prod server started for
+   measurement opened a pool. The processes were killed — but **session mode holds a connection until
+   the client disconnects cleanly**, and a killed process never does. Supavisor did not reap them:
+   they sat `idle` for **20-48 minutes** holding slots for servers that no longer existed.
+2. **A PageSpeed scan took the rest.** Lighthouse hammers the site → Vercel spins up function
+   instances → each builds its own pool, up to `pg`'s default of **10**, because `lib/prisma.ts:17`
+   sets no `max`.
+
+**The thing I got wrong:** I logged this as "will bite when traffic arrives" and assumed the pooler
+budget was per-environment. **It's global** — a local dev machine and production Vercel functions
+draw from the same 15 slots. Local benchmarking can take production down. It did.
+
+**Diagnosis note:** `client_addr` is useless here — every row shows Supavisor's own IP, because
+everything routes through the pooler. **`backend_start` age is what separates the clients:** 2864s/1258s
+= orphans, ~355s = live Vercel.
+
+**Fix applied (authorised):** `pg_terminate_backend` on connections that were **both `idle` and older
+than 20 minutes** — the orphans only, leaving live Vercel connections alone. Terminated 8 → 7/15 held,
+8 free. Verified: `/api/storefront/products` **200 × 3, 20 products, 5 categories**; `/api/visit` **200**.
+
+**Prevention (NOT done — needs a deliberate change, not a 1am one):** see the risk item below. Until
+the pool is capped, **a PageSpeed scan can take production down**, and so can any local dev server
+left running. Cap the pool and/or move to transaction mode **before** Phase 2 ships payments.
+
+## 🆕 Found late — connection-pool exhaustion (not fixed, logged)
+
+Adding loading skeletons, the inventory tests went from 48/48 to **5 skipped**:
+
+```
+DriverAdapterError: (EMAXCONNSESSION) max clients reached in session mode — pool_size: 15
+```
+
+Queried the DB directly: **15 connections held, 14 idle.** Leftovers from the dev/prod servers
+started while measuring Lighthouse — Supavisor reaps idle sessions slowly.
+
+**It isn't just a local annoyance.** `lib/prisma.ts:17` creates `new Pool({connectionString})` with
+**no `max`** → `pg` defaults to **10 per pool**. Production is **port 5432 (session mode)**, pooler
+`pool_size` **15**, and Vercel gives **each function instance its own pool**. Two concurrent
+instances = 20 > 15 → the same error, in production. Leaving dev servers running was an accidental
+simulation of concurrent clients.
+
+Not biting yet only because there's no traffic. **Must be fixed before Phase 2 ships payments** —
+cap the pool (`max: 1` is the standard serverless answer) and/or move to transaction mode (6543).
+Logged in [MISSING.md](../../MISSING.md) 🟠.
+
+**Test-side mitigation applied:** concurrency 8 → 5, `TEST_POOL_MAX = 6`. Mutation-verified the
+smaller race test still fails against read-then-write, so it lost no teeth. CI is unaffected
+(throwaway Postgres allows ~100).
 
 ## Deliberately not done
 

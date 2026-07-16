@@ -122,12 +122,48 @@ for the last unit produce exactly one order and `stockQty: 0`, never `-1`.
 
 ## Phase 0.5 — Performance: fix LCP · **S** · ✅ DONE (2026-07-16), pending a deploy re-measure
 
-**Measured result (local production build, Lighthouse 12):**
+**Measured on PRODUCTION (PSI, Lighthouse 13.4.0) — Phase 0.5 hit 100:**
 
 | | Mobile | Desktop |
 |---|---|---|
-| Before (live site) | 70 | 90 |
-| **After** | **95** | **100** ✅ |
+| Before | 70 | 90 |
+| **After Phase 0.5 (22:47)** | **98** | **100** 🏆 |
+| After skeletons (23:37) | 94 | 95 |
+
+**Phase 0.5 achieved a genuine 100 on production.** Then commit `08f7613` (loading skeletons) cost
+**5 desktop / 4 mobile** — see the regression below.
+
+| Metric | Desktop @100 | Mobile @98 |
+|---|---|---|
+| FCP | **0.3 s** ✅ | **0.9 s** ✅ |
+| **LCP** | **0.5 s** ✅ | 2.5 s (−2) |
+| **TBT** | 70 ms ✅ | **0 ms** ✅ |
+| **CLS** | **0** ✅ | **0** ✅ |
+| SI | **0.8 s** ✅ | **1.8 s** ✅ |
+
+### ✅ Skeleton regression — found and fixed the same night
+
+`animate-pulse` on **96 elements** + SSR HTML **17 KB → 57 KB** cost **5 desktop / 4 mobile**:
+- **Mobile SI 1.8 → 4.1 s** — SI scores how fast a page *stops changing*; a pulse never stops.
+- **Desktop TBT 70 → 170 ms**, long tasks **1 → 3** — more DOM in the hydration burst.
+- New insights: `Optimize DOM size`, `Forced reflow`, `Layout shift culprits`.
+
+**Fixed:** static tint, elements/card ~8 → 5, dimensions untouched. Local re-measure: **desktop 100**,
+**mobile 95 (95/95/95)**, desktop TBT **0 ms**, long tasks **1**, mobile SI **0.8 s**, **CLS 0**.
+**Never add animation back to `Skeleton.tsx`** — the comment block there explains why.
+
+### After that, the remaining gap is all Phase 1 / Phase 4
+
+- **Mobile −2 was LCP 2.5 s even at its best** — hydration render-delay. **Phase 1.**
+- **Biggest single item: "Improve image delivery — 1,204 KiB"** — Unsplash product images at 1080px.
+  `next/image`, **Phase 4**.
+
+PSI's own insights (long main-thread tasks, unused JS, image delivery) name Phases 1 and 4 unprompted.
+
+> **Lesson recorded (PLAN 5.10 exists because of this):** the skeleton regression shipped between two
+> PSI runs 50 minutes apart, and was nearly missed because a metric was read as an absolute
+> ("SI 1.0 s is perfect") rather than against its own history ("SI 1.0 s is 25% worse than the last
+> run"). **This is exactly what a CI budget catches and a human eye does not.**
 
 What actually moved, and it's the phase data that proves the diagnosis was right:
 
@@ -482,6 +518,10 @@ reality:
 - **Assert on individual metrics with headroom, not the aggregate score.** `LCP < 1.5s`,
   `CLS < 0.05`, `TBT < 200ms` is stable. `score >= 100` fails on ±2-3 points of normal noise, and a
   check that cries wolf gets disabled within a week — at which point you have no budget at all.
+  > **Measured proof (2026-07-16):** one mobile run returned **85 with TBT 370 ms**. Three immediate
+  > re-runs on identical code returned **95/95/95 with TBT 50-70 ms**. That's a **10-point** swing
+  > from machine load alone. An aggregate-score gate would have red-built a correct commit. **Median
+  > several runs, and budget the metrics.**
 - **Run against a local production build, not the deployed URL.** No network variance, no cold
   starts, no dependency on a deploy finishing. Far more stable, and it can block the PR that caused
   the regression rather than telling you after it shipped.

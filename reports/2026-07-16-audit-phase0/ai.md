@@ -83,6 +83,119 @@ Re-measure post-deploy and replace.
 **Remaining 5 mobile points = Phase 1.** Render delay 2064ms = image waits on main thread (373ms
 script eval × 4 CPU throttle) because the storefront is a client bundle. Less JS is the only fix.
 
+## 🔥 INCIDENT (resolved) — prod down ~10min, connection exhaustion
+
+The "open risk" below **fired in production ~20 min after being logged.** Read this before touching
+the DB or running local servers.
+
+| | |
+|---|---|
+| Symptom | `/api/visit` + `/api/storefront/products` → **500**; `EMAXCONNSESSION ... pool_size: 15` |
+| Cause A | **8 orphaned local connections.** Session mode holds a conn until the client disconnects *cleanly*; killed dev servers never do. Supavisor didn't reap → idle **20-48 min**, holding dead servers' slots |
+| Cause B | **PageSpeed scan** → Vercel spun up instances → each built its own pool (`pg` default **10**, no `max` in `lib/prisma.ts:17`) → took the remaining slots |
+| **Key correction** | **The 15-slot budget is GLOBAL, not per-environment.** Local dev + Vercel prod share it. **Local benchmarking can take production down. It did.** |
+| Diagnosis gotcha | `client_addr` shows **Supavisor's IP for every row** (all traffic routes through the pooler) — useless for attribution. Use **`backend_start` age**: old = orphans, young = live Vercel |
+| Fix applied | `pg_terminate_backend` where `state='idle' AND now()-backend_start > interval '20 minutes'` → killed 8, 7/15 held, 8 free |
+| Verified | `/api/storefront/products` **200 ×3, 20 products / 5 categories**; `/api/visit` **200** |
+| **Still unfixed** | The uncapped pool. **A PageSpeed scan can take prod down until it's capped.** |
+
+**Operational rule until fixed:** don't leave local dev/prod servers running against this DB, and
+don't benchmark prod while a local server is up. If prod 500s with `EMAXCONNSESSION`, terminate
+idle connections older than 20 min (needs user authorisation — destructive on prod).
+
+## 🆕 OPEN RISK — connection-pool exhaustion (logged, NOT fixed)
+
+| | |
+|---|---|
+| Error | `DriverAdapterError: (EMAXCONNSESSION) max clients reached in session mode — pool_size: 15` |
+| Cause | `lib/prisma.ts:17` → `new Pool({connectionString})` with **no `max`** → pg default **10/pool**. Prod `DATABASE_URL` = **:5432 session mode** (holds conn per session). Pooler `pool_size` **15**. Vercel = **pool per function instance** → 2 instances = 20 > 15 |
+| Measured | 15 conns held, 14 idle (`pg_stat_activity`). Supavisor reaps idle slowly |
+| Trigger found | Leaving dev servers running while benchmarking = accidental concurrency sim |
+| Prod impact | **None yet (no traffic). Will bite when Phase 2 ships payments.** |
+| Fix (not applied) | Cap pool (`max: 1`, standard for serverless — 1 req per instance) and/or transaction mode **:6543** (returns conns between statements; Supabase's serverless recommendation) |
+| Also | `prisma/seed.ts:17` same uncapped pool — one-shot script, lower stakes |
+
+**Test mitigation applied:** `CONCURRENCY` 8→5, `TEST_POOL_MAX=6` (`tests/helpers/db.ts`).
+Mutation-verified: read-then-write still fails both race tests at 5. CI unaffected (throwaway PG ~100).
+
+## 📊 PageSpeed — PROD HIT 100/98, SKELETONS COST 5/4 (PSI, LH 13.4.0)
+
+Two runs, 50 min apart. **Only delta = commit `08f7613` "Add loading skeletons".**
+
+| | Baseline | **22:47 post-0.5** | **23:37 post-skeleton** |
+|---|---|---|---|
+| Desktop | 90 | **100** 🏆 | **95** (−5) |
+| Mobile | 70 | **98** | **94** (−4) |
+
+| Metric | Dsk 22:47 | Dsk 23:37 | Mob 22:47 | Mob 23:37 |
+|---|---|---|---|---|
+| FCP | 0.3s | 0.3s | 0.9s | 0.9s |
+| LCP | **0.5s** | 0.6s | **2.5s** | 2.8s |
+| **TBT** | **70ms** | **170ms** 🔴 | **0ms** | 20ms |
+| CLS | 0 | 0 | 0 | 0 |
+| **SI** | **0.8s** | 1.0s | **1.8s** | **4.1s** 🔴 |
+| long tasks | **1** | **3** 🔴 | — | **2** 🔴 |
+
+**New insights at 23:37 only:** `Optimize DOM size` · `Forced reflow` · `Layout shift culprits`
+
+**Cause (mine):**
+1. `animate-pulse` × **96 els** → SI. SI = how fast the page stops changing; a pulse never stops.
+   **Mobile SI 1.8 → 4.1s.**
+2. SSR HTML **17KB → 57KB** → more hydration work → **1→3 long tasks**, **+100ms** desktop TBT.
+
+**✅ FIX APPLIED — de-pulsed.** `animate-pulse` removed (static tint), els/card ~8→5, dims untouched.
+
+| | pulse | **de-pulsed** |
+|---|---|---|
+| Desktop | 95 | **100** (local; prod was 100 pre-skeleton) |
+| Mobile | 94 | **95** (3 runs: 95/95/95) |
+| Dsk TBT | 170ms | **0ms** |
+| Dsk long tasks | 3 | **1** |
+| **Mob SI** | **4.1s** | **0.8s** |
+| CLS | 0 | **0** ✅ |
+| pulse els | 96 | **0** |
+| SSR HTML | 57KB | 52.5KB |
+
+**INVARIANT: never add animation back to `Skeleton.tsx`** — not `animate-pulse`, not a shimmer.
+Any continuous motion tanks SI. Shape alone reads as loading; `sr-only` covers a11y. See the comment
+block at the top of that file.
+
+**Noise datum for 5.10:** one mobile run = **85, TBT 370ms**; three re-runs = **95/95/95, TBT
+50-70ms**. TBT swings hard on a loaded machine. **Budget individual metrics with headroom, NEVER
+`score >= 100`** — that outlier would red-build a correct commit.
+
+**Proven good:** hero fix real-world (desktop LCP **0.5s** @22:47) · CLS **0** throughout, skeletons
+did NOT break it · FCP perfect both · render-blocking **905ms → 20-40ms**.
+
+## ❌ CORRECTION — two wrong calls on this, same night
+
+1. **"Skeletons didn't hurt SI"** — I checked desktop SI (1.0s), saw "perfect", and retired the
+   hypothesis. **One absolute number read as a trend.** Desktop SI had gone 0.8→1.0; mobile had
+   **doubled**. → *A metric is only meaningful against its own history. "1.0s is perfect" and "1.0s
+   is 25% worse than yesterday" are both true; only the second is the finding.*
+2. **"Desktop 100→95 = the lab was optimistic"** — wrong. **Production independently scored 100** at
+   22:47. Lab and prod agreed. It was a real regression shipped 50 min later.
+
+**Remaining losses → already-planned phases:**
+- **Desktop −5 = TBT 170ms (3 long tasks).** Oddity: desktop **170ms** vs mobile **20ms** despite 4×
+  mobile CPU throttle. Slow 4G trickles JS → small chunks; fast desktop lands it all at once →
+  **one hydration burst** → long tasks. Same root cause as mobile LCP render-delay → **Phase 1**.
+- **Biggest item left: "Improve image delivery — 1,204 KiB"** (Unsplash 1080px product imgs) →
+  `next/image` → **Phase 4**.
+
+**Do not trust the sibling scores:**
+- **SEO 100 is a lie of omission** — LH checks title/crawlable/structured-data. It **cannot see that
+  every storefront page shares one URL**. Never cite it against Phase 1.
+- **🆕 A11y 96 — insufficient colour contrast.** Not yet in MISSING.md.
+- Best Practices 100, but its Trust & Safety panel flags CSP/COOP/XFO/Trusted Types → PLAN 5.2.
+
+**Caveat:** measured while the pool was degraded (12/15 held, API TTFB 1.0-2.4s vs ~300ms). Homepage
+TTFB was fine (0.21-0.29s) and the API is off the LCP path, so impact likely small — **re-measure
+after capping the pool.**
+
+**Hypothesis retired:** skeletons suspected of wrecking SI (96 `animate-pulse` els). Desktop SI came
+back **1.0s perfect** → they didn't. May add desktop TBT via hydration; unproven.
+
 ## Verify commands
 
 ```bash

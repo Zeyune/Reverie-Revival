@@ -77,6 +77,30 @@ Working tracker. Check off items as they get done.
       `headers()`. Missing CSP, HSTS, X-Frame-Options/frame-ancestors, X-Content-Type-Options,
       Referrer-Policy, Permissions-Policy. The admin panel is framable → clickjacking on every
       state-changing form.
+- [ ] **🔥 Connection-pool exhaustion — ALREADY TOOK PRODUCTION DOWN (2026-07-16)** — `lib/prisma.ts:17` builds
+      `new Pool({ connectionString })` with **no `max`**, so `pg` defaults to **10 connections per
+      pool**. Production `DATABASE_URL` uses **port 5432 = session mode**, which holds a connection
+      per client for the whole session, and the pooler's **`pool_size` is 15** (measured). Vercel
+      runs many function instances and **each gets its own pool** → *two* concurrent instances can
+      request 20 > 15 and fail with:
+      > `DriverAdapterError: (EMAXCONNSESSION) max clients reached in session mode — pool_size: 15`
+
+      **This is not hypothetical — it took production down on 2026-07-16 for ~10 minutes.** Every DB
+      route 500'd. Cause: 8 connections orphaned by local Lighthouse benchmarking (session mode holds
+      a connection until the client disconnects *cleanly*; killed processes never do, and Supavisor
+      left them idle for 20-48 minutes) **plus** a PageSpeed scan spinning up Vercel instances that
+      took the rest. Recovered by terminating the idle orphans. See
+      [reports/2026-07-16-audit-phase0/dev.md](reports/2026-07-16-audit-phase0/dev.md).
+
+      **⚠️ The 15-slot budget is GLOBAL, not per-environment.** A local dev machine and production
+      Vercel functions draw from the same pool. **Local benchmarking can take production down**, and
+      right now **a PageSpeed scan alone is enough to do it.**
+
+      **Fix before Phase 2 ships payments** — and before the next benchmarking session. Options:
+      cap the pool (`max: 1` is the usual serverless answer, since each instance handles one request
+      at a time), and/or move to **transaction mode (port 6543)** which is what Supabase recommends
+      for serverless — it returns connections between statements instead of holding them.
+      `prisma/seed.ts:17` has the same uncapped pool, but it's a one-shot script so it matters less.
 - [ ] **No migration history** — `prisma/` contains only `schema.prisma` and `seed.ts`.
       `package.json:14` exposes `db push` only; there is no `prisma migrate` script. No version
       history, no reviewable SQL, no rollback, no `migrate deploy` gate, and no way to reproduce
@@ -192,6 +216,12 @@ Working tracker. Check off items as they get done.
 
 ## 🟢 Low / polish
 
+- [ ] **🆕 Accessibility: insufficient colour contrast** — Lighthouse scores a11y **96** on both
+      mobile and desktop, failing only the contrast check: *"Background and foreground colors do not
+      have a sufficient contrast ratio."* Predictable for a dark theme leaning on `text-white/60` and
+      `text-white/40` (e.g. `ProductCard.tsx:100,112`, `Footer.tsx:112`). Cheap, and it's the only
+      thing between you and 100. *(Measured 2026-07-16 — full PSI run in
+      [reports/2026-07-16-audit-phase0/dev.md](reports/2026-07-16-audit-phase0/dev.md).)*
 - [ ] **`ShopPage` hardcodes sizes/colors** (`:38-44`) instead of deriving them from the loaded
       catalog, so filters can offer options no product has — and miss ones they do.
       *(The sort-mutation and missing-dep bugs in this file were fixed in Phase 0.)*

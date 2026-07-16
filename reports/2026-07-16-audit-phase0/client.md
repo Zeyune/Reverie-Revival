@@ -51,13 +51,45 @@ Fixed by making the image discoverable immediately and shrinking it to **40 KB �
 The fonts were also being fetched from Google's servers, which blocked the page from drawing; they
 now come from your own site.
 
-| Speed score | Before | After |
-|---|---|---|
-| Phone | 70 | **95** |
-| Desktop | 90 | **100** ✅ |
+**Measured on the real live site** (Google PageSpeed, 16 July):
 
-Worth noting: **the page never had a "jumping content" problem.** That was measured and it was
-already perfect — so no time was spent on a problem you didn't have.
+| Speed score | Before | **After the speed work** |
+|---|---|---|
+| Phone | 70 | **98** |
+| Desktop | 90 | **100** 🏆 |
+
+**A perfect 100 on desktop, on the real site.** The main image now appears in **half a second** —
+it used to take five and a half seconds on a phone.
+
+### …and then I broke it slightly, an hour later
+
+The loading placeholders I added (the grey boxes that show while products load) **cost 5 points on
+desktop and 4 on phone** — the score went to 95 and 94.
+
+Why: those placeholders gently pulse to show they're loading. That pulse never stops until the
+products arrive — and the speed test partly measures *"how quickly does the page stop moving?"*
+A permanently pulsing page looks, to the test, like a page that never finishes loading. They also
+made the page three times bigger to send.
+
+**Fixed the same night.** The placeholders are now a plain, still grey instead of a pulsing one —
+they still do both their jobs (showing products are coming, holding the space so nothing jumps)
+without the cost:
+
+| | With the pulse | **Fixed** |
+|---|---|---|
+| Desktop | 95 | **100** ✅ |
+| Phone | 94 | **95** |
+
+**Desktop is back to a perfect 100.**
+
+I'd rather tell you I cost you 5 points than let it quietly sit there. *(These last figures are from
+the development machine — worth one more real test on the live site to confirm.)*
+
+Worth noting: **the page never had a "jumping content" problem**, before or after. That was measured
+both times and it's perfect — no time was spent on a problem you didn't have.
+
+**The single biggest thing left:** your product photos are about **1.2 MB** larger than they need to
+be. That's already on the plan and it's the largest remaining win by a wide margin.
 
 ### A quiet email bug
 
@@ -75,6 +107,55 @@ tool the project has had installed the whole time.** Nobody had ever run it.
 
 Now it runs by itself on every change, so this can't quietly happen again. **48 automated tests**
 were also added, covering the shop basket, the discount logic, and that stock bug.
+
+---
+
+## The site went down tonight — and it's back
+
+**Fixed, and worth understanding, because it's the same problem as the section below.**
+
+While testing the site's speed, every page stopped being able to load products. The shop showed
+nothing again.
+
+**Your database only accepts 15 conversations at once — and that limit is shared by everything.**
+Not "15 for the live site and 15 for the development machine." Fifteen. Total. Between all of them.
+
+Two things ate all fifteen:
+
+1. **Leftovers from the speed testing.** Each test run opened conversations with the database. The
+   test programs were shut down — but the database doesn't notice a program vanishing, it waits for
+   a polite goodbye. It never came, so it kept holding those lines open for a dead program. Eight of
+   them, some for nearly an hour.
+2. **The speed test itself.** Scanning the live site made the hosting spin up extra copies of your
+   site to handle the load, and each copy opened its own set of lines.
+
+Together: all fifteen used, nothing left, every page fails.
+
+**Fix:** the eight abandoned lines were closed (only the abandoned ones — the live site's own
+connections were left alone). Confirmed working: **all 20 products loading again.**
+
+**What you should take from this:** the site is currently fragile enough that *running a speed test
+can knock it offline.* That's not sustainable, and it's the same root cause as the section below.
+It needs fixing properly before you take real payments — but not at 1am, and not without your say-so.
+
+---
+
+## One new problem found at the very end
+
+While adding the loading placeholders, the automated tests suddenly started failing. Chasing it down
+turned up something worth knowing:
+
+**Your database only allows 15 things to talk to it at once.** Right now the site doesn't limit how
+many "phone lines" it opens, and the hosting runs several copies of your site at busy moments — each
+one opening its own set of lines. **Two copies running at once could use up all 15 and lock everyone
+out.**
+
+It hasn't happened because you have no customers yet. But it's exactly the kind of thing that breaks
+**the day you get busy** — which is the worst possible day for it.
+
+Nothing was changed for this tonight; it's written down so it gets fixed properly before the payment
+work goes live. The tests were made to use fewer connections so they stop tripping over it, and it
+was double-checked that they still catch the original stock bug.
 
 ---
 
