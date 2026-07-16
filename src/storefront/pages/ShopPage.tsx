@@ -18,13 +18,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   categories,
   isLoading,
 }) => {
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading products...
-      </div>
-    );
-  }
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -44,7 +37,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   ];
 
   const filteredProducts = useMemo(() => {
-    let filtered = products;
+    // Copy up front so the in-place sort below can never touch the caller's
+    // array. Today the unconditional price filter already guarantees a fresh
+    // array by the time sort runs — but that's incidental. Make any filter
+    // conditional and the sort starts reordering App's own state, destroying
+    // "Featured" order for every other page. Cheap insurance against a
+    // non-obvious action-at-a-distance bug.
+    let filtered = [...products];
 
     // Category filter
     if (selectedCategory !== 'all') {
@@ -86,7 +85,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     }
 
     return filtered;
-  }, [selectedCategory, selectedSizes, selectedColors, priceRange, sortBy]);
+    // `products` matters: it arrives asynchronously, so leaving it out caches the
+    // first (empty) result and the grid never fills in.
+  }, [products, selectedCategory, selectedSizes, selectedColors, priceRange, sortBy]);
 
   const toggleSize = (size: string) => {
     setSelectedSizes((prev) =>
@@ -99,6 +100,17 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
+
+  // Must stay below every hook. React matches hooks by call order, so returning
+  // before them means the loading render calls fewer hooks than the loaded one
+  // and the next render throws "Rendered fewer hooks than expected".
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white/60">
+        Loading products...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12 px-4">

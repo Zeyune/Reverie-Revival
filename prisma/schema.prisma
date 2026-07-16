@@ -15,6 +15,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// DEPRECATED — scaffold leftover, no longer used by any code. Its only consumer
+/// was the /starter setup page, deleted in Phase 0. The table is empty (0 rows).
+/// Drop it as part of the migration baseline (PLAN.md 5.1) so the DROP TABLE
+/// lands as reviewable, versioned SQL rather than an untracked `db push`.
 model Reverie {
   id          String   @id @default(cuid())
   title       String

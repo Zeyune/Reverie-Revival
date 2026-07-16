@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { reserveStock } from "@/lib/inventory";
 import { randomUUID } from "crypto";
 import {
   buildNetworkRateLimitRules,
   getRequestRateLimitContext,
   recordRateLimitHit,
 } from "@/lib/rate-limit";
+
+class OutOfStockError extends Error {
+  constructor(readonly sku: string) {
+    super(`Insufficient stock for ${sku}.`);
+  }
+}
 
 export const runtime = "nodejs";
 
@@ -170,6 +177,9 @@ export async function POST(request: Request) {
       return null;
     }
 
+    // Fast path only — a cheap 409 before we open a transaction. This read is
+    // not authoritative: stock can change between here and the reservation
+    // below, which is why reserveStock re-checks under the row lock.
     if (variant.stockQty < item.quantity) {
       stockIssues.push(variant.sku);
     }
@@ -242,6 +252,23 @@ export async function POST(request: Request) {
     const orderNumber = createOrderNumber();
 
     const order = await prisma.$transaction(async (tx) => {
+      // Take the stock first: if any line can't be filled we throw and the whole
+      // transaction rolls back, so no order row is left behind.
+      //
+      // Reserve in a stable order (by variantId). Two carts holding the same two
+      // variants in opposite orders would otherwise grab the row locks in
+      // opposite orders and deadlock.
+      const reservationOrder = [...preparedItems].sort((a, b) =>
+        a.variantId.localeCompare(b.variantId)
+      );
+
+      for (const item of reservationOrder) {
+        const reserved = await reserveStock(tx, item.variantId, item.qty);
+        if (!reserved) {
+          throw new OutOfStockError(item.skuSnapshot);
+        }
+      }
+
       const created = await tx.order.create({
         data: {
           orderNumber,
@@ -277,15 +304,6 @@ export async function POST(request: Request) {
 
       await Promise.all(
         preparedItems.map((item) =>
-          tx.variant.update({
-            where: { id: item.variantId },
-            data: { stockQty: { decrement: item.qty } },
-          })
-        )
-      );
-
-      await Promise.all(
-        preparedItems.map((item) =>
           tx.stockMovement.create({
             data: {
               variantId: item.variantId,
@@ -305,6 +323,15 @@ export async function POST(request: Request) {
       orderNumber: order.orderNumber,
     });
   } catch (error) {
+    // Someone else took the last unit between the fast-path check and the
+    // reservation. The transaction rolled back, so there's no partial order.
+    if (error instanceof OutOfStockError) {
+      return NextResponse.json(
+        { error: "Some items are out of stock.", stockIssues: [error.sku] },
+        { status: 409 }
+      );
+    }
+
     console.error("Failed to create order.", error);
     return NextResponse.json(
       { error: "Unable to create order at this time." },

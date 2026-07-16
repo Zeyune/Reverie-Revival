@@ -18,13 +18,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   products,
   isLoading,
 }) => {
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading product...
-      </div>
-    );
-  }
   const product = products.find((p) => p.id === productId);
   const { wishlist, toggleWishlist, addToCart } = useStore();
   const { addToast } = useToast();
@@ -34,6 +27,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [expandedSection, setExpandedSection] = useState<string | null>('details');
+
+  // Must stay below every hook. React matches hooks by call order, so returning
+  // before them means the loading render calls fewer hooks than the loaded one
+  // and the next render throws "Rendered fewer hooks than expected".
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white/60">
+        Loading product...
+      </div>
+    );
+  }
 
   if (!product) {
     return (

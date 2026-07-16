@@ -1,51 +1,116 @@
+import { redirect } from "next/navigation";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-auth";
+import { recordAuditLog } from "@/lib/audit";
 import { Table, THead, TBody, TR, TH, TD } from "@/app/admin/(app)/_components/ui/Table";
 import { Button } from "@/app/admin/(app)/_components/ui/Button";
+import { InlineAlert } from "@/app/admin/(app)/_components/ui/InlineAlert";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
+// A FIXED discount is a peso amount, so it has no natural upper bound the way a
+// percentage does. This ceiling only rejects absurd values; the authoritative
+// guard is the clamp to the order subtotal when the discount is applied.
+const MAX_FIXED_DISCOUNT = 100_000;
+
+const createSchema = z
+  .object({
+    code: z
+      .string()
+      .min(1)
+      .max(64)
+      .transform((value) => value.trim().toUpperCase()),
+    description: z.string().min(1).max(280),
+    discountType: z.enum(["PERCENTAGE", "FIXED"]),
+    discountValue: z.number().int().positive(),
+  })
+  .refine(
+    (data) =>
+      data.discountType === "PERCENTAGE"
+        ? data.discountValue <= 100
+        : data.discountValue <= MAX_FIXED_DISCOUNT,
+    { path: ["discountValue"] }
+  );
+
 async function createPromoCode(formData: FormData) {
-    "use server";
+  "use server";
 
-    if (!prisma) {
-        throw new Error("Prisma client is not available.");
-    }
-    const db = prisma;
+  if (!prisma) {
+    throw new Error("Prisma client is not available.");
+  }
+  const admin = await requireAdmin();
+  const db = prisma;
 
-    const code = formData.get("code") as string;
-    const description = formData.get("description") as string;
-    const discountType = formData.get("discountType") as "PERCENTAGE" | "FIXED";
-    const discountValue = Number(formData.get("discountValue"));
+  const parsed = createSchema.safeParse({
+    code: String(formData.get("code") ?? ""),
+    description: String(formData.get("description") ?? "").trim(),
+    discountType: String(formData.get("discountType") ?? ""),
+    discountValue: Number(formData.get("discountValue")),
+  });
 
-    if (!code || !description || !discountType || !discountValue) {
-        return;
-    }
+  if (!parsed.success) {
+    redirect("/admin/promos?error=invalid");
+  }
 
-    await db.promoCode.create({
-        data: {
-            code,
-            description,
-            discountType,
-            discountValue,
-        },
-    });
+  const existing = await db.promoCode.findUnique({
+    where: { code: parsed.data.code },
+  });
+  if (existing) {
+    redirect("/admin/promos?error=duplicate");
+  }
 
-    revalidatePath("/admin/promos");
+  const created = await db.promoCode.create({ data: parsed.data });
+
+  await recordAuditLog({
+    actorAdminId: admin.id,
+    action: "promo.create",
+    entityType: "promoCode",
+    entityId: created.id,
+    diff: parsed.data,
+  });
+
+  revalidatePath("/admin/promos");
 }
 
 async function deletePromoCode(id: string) {
-    "use server";
-    if (!prisma) {
-        throw new Error("Prisma client is not available.");
-    }
-    const db = prisma;
+  "use server";
+  if (!prisma) {
+    throw new Error("Prisma client is not available.");
+  }
+  const admin = await requireAdmin();
+  const db = prisma;
 
-    await db.promoCode.delete({ where: { id } });
-    revalidatePath("/admin/promos");
+  const promoId = z.string().min(1).safeParse(id);
+  if (!promoId.success) {
+    redirect("/admin/promos?error=invalid");
+  }
+
+  const deleted = await db.promoCode.delete({ where: { id: promoId.data } });
+
+  await recordAuditLog({
+    actorAdminId: admin.id,
+    action: "promo.delete",
+    entityType: "promoCode",
+    entityId: promoId.data,
+    diff: { code: deleted.code },
+  });
+
+  revalidatePath("/admin/promos");
 }
 
-export default async function PromoCodesPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+    invalid:
+        "Could not create that code. Check the value: percentages must be 1-100, fixed amounts must be a whole number of pesos.",
+    duplicate: "A promo code with that name already exists.",
+};
+
+export default async function PromoCodesPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ error?: string }>;
+}) {
     if (!prisma) {
         return (
             <div className="text-white/70">
@@ -54,6 +119,9 @@ export default async function PromoCodesPage() {
         );
     }
     const db = prisma;
+
+    const { error } = await searchParams;
+    const errorMessage = error ? ERROR_MESSAGES[error] ?? ERROR_MESSAGES.invalid : null;
 
     const promos = await db.promoCode.findMany({
         orderBy: { createdAt: "desc" },
@@ -67,6 +135,8 @@ export default async function PromoCodesPage() {
                 </h1>
                 <p className="mt-2 text-sm text-white/60">Manage discount codes for the store.</p>
             </div>
+
+            {errorMessage && <InlineAlert tone="danger">{errorMessage}</InlineAlert>}
 
             <div className="rounded-xl border border-white/10 bg-[#121214] p-6">
                 <h2 className="mb-4 text-sm tracking-[0.2em]">CREATE NEW CODE</h2>
@@ -135,7 +205,7 @@ export default async function PromoCodesPage() {
                                 <TD>
                                     {promo.discountType === "PERCENTAGE"
                                         ? `${promo.discountValue}%`
-                                        : `$${promo.discountValue}`}
+                                        : `₱${promo.discountValue}`}
                                 </TD>
                                 <TD>
                                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${promo.isActive ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>

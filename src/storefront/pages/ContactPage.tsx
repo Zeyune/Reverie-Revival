@@ -62,7 +62,7 @@ export const ContactPage: React.FC = () => {
             className="text-white/70"
             style={{ fontFamily: "'Allura', cursive", fontSize: '2rem' }}
           >
-            We'd love to hear from you
+            We&apos;d love to hear from you
           </p>
         </div>
 

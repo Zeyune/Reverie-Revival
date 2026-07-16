@@ -1,21 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useSyncExternalStore } from 'react';
 import { StorefrontProduct, getVariantPrice } from '../data/storefront';
 import { toast } from 'sonner';
+import {
+  getServerSnapshot,
+  getSnapshot,
+  subscribe,
+  update,
+  type CartItem,
+  type Promo,
+} from '../lib/store';
 
-
-interface CartItem {
-  product: StorefrontProduct;
-  size: string;
-  color: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-interface Promo {
-  code: string;
-  type: 'PERCENTAGE' | 'FIXED';
-  value: number;
-}
+export type { CartItem, Promo };
 
 interface StoreContextType {
   cart: CartItem[];
@@ -35,65 +30,21 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
+const isSameVariant = (
+  item: CartItem,
+  productId: string,
+  size: string,
+  color: string
+) => item.product.id === productId && item.size === size && item.color === color;
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
-  const [appliedPromo, setAppliedPromo] = useState<Promo | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const savedCart = window.localStorage.getItem('reverie-cart');
-    const savedWishlist = window.localStorage.getItem('reverie-wishlist');
-
-    if (savedCart) {
-      try {
-        const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) {
-          setCart(
-            parsed.map((item) => ({
-              ...item,
-              unitPrice:
-                typeof item.unitPrice === 'number'
-                  ? item.unitPrice
-                  : getVariantPrice(item.product, item.size, item.color),
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Failed to parse saved cart.', error);
-      }
-    }
-
-    if (savedWishlist) {
-      try {
-        setWishlist(JSON.parse(savedWishlist));
-      } catch (error) {
-        console.error('Failed to parse saved wishlist.', error);
-      }
-    }
-
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
-    window.localStorage.setItem('reverie-cart', JSON.stringify(cart));
-  }, [cart, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
-    window.localStorage.setItem('reverie-wishlist', JSON.stringify(wishlist));
-  }, [wishlist, isHydrated]);
+  // localStorage is the source of truth; see ../lib/store.ts for why this reads
+  // through useSyncExternalStore rather than mirroring into state with effects.
+  const { cart, wishlist, appliedPromo } = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
 
   const applyPromo = async (code: string) => {
     try {
@@ -105,60 +56,58 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const data = await response.json();
 
       if (data.valid) {
-        setAppliedPromo(data.promo);
+        update((current) => ({ ...current, appliedPromo: data.promo }));
         toast.success(`Promo code ${data.promo.code} applied!`);
         return true;
-      } else {
-        toast.error(data.error || 'Invalid promo code');
-        return false;
       }
-    } catch (error) {
+
+      toast.error(data.error || 'Invalid promo code');
+      return false;
+    } catch {
       toast.error('Failed to apply promo code');
       return false;
     }
   };
 
   const removePromo = () => {
-    setAppliedPromo(null);
+    update((current) => ({ ...current, appliedPromo: null }));
     toast.info('Promo code removed');
   };
 
-  const addToCart = (product: StorefrontProduct, size: string, color: string, quantity: number) => {
+  const addToCart = (
+    product: StorefrontProduct,
+    size: string,
+    color: string,
+    quantity: number
+  ) => {
     const unitPrice = getVariantPrice(product, size, color);
-    setCart((prevCart) => {
-      const existingItem = prevCart.find(
-        (item) =>
-          item.product.id === product.id &&
-          item.size === size &&
-          item.color === color
+
+    update((current) => {
+      const existing = current.cart.find((item) =>
+        isSameVariant(item, product.id, size, color)
       );
 
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.product.id === product.id &&
-            item.size === size &&
-            item.color === color
-            ? { ...item, quantity: item.quantity + quantity, unitPrice }
-            : item
-        );
-      }
+      const nextCart = existing
+        ? current.cart.map((item) =>
+            isSameVariant(item, product.id, size, color)
+              ? { ...item, quantity: item.quantity + quantity, unitPrice }
+              : item
+          )
+        : [...current.cart, { product, size, color, quantity, unitPrice }];
 
-      return [...prevCart, { product, size, color, quantity, unitPrice }];
+      return { ...current, cart: nextCart };
     });
+
     toast.success(`Added ${product.name} to cart`);
   };
 
   const removeFromCart = (productId: string, size: string, color: string) => {
-    setCart((prevCart) =>
-      prevCart.filter(
-        (item) =>
-          !(
-            item.product.id === productId &&
-            item.size === size &&
-            item.color === color
-          )
-      )
-    );
+    update((current) => ({
+      ...current,
+      cart: current.cart.filter(
+        (item) => !isSameVariant(item, productId, size, color)
+      ),
+    }));
   };
 
   const updateCartQuantity = (
@@ -172,49 +121,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product.id === productId &&
-          item.size === size &&
-          item.color === color
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    update((current) => ({
+      ...current,
+      cart: current.cart.map((item) =>
+        isSameVariant(item, productId, size, color) ? { ...item, quantity } : item
+      ),
+    }));
   };
 
   const clearCart = () => {
-    setCart([]);
-    setAppliedPromo(null);
+    update((current) => ({ ...current, cart: [], appliedPromo: null }));
   };
 
   const toggleWishlist = (productId: string) => {
-    setWishlist((prevWishlist) =>
-      prevWishlist.includes(productId)
-        ? prevWishlist.filter((id) => id !== productId)
-        : [...prevWishlist, productId]
-    );
+    update((current) => ({
+      ...current,
+      wishlist: current.wishlist.includes(productId)
+        ? current.wishlist.filter((id) => id !== productId)
+        : [...current.wishlist, productId],
+    }));
   };
 
-  const getCartTotal = () => {
-    return cart.reduce(
-      (total, item) => total + item.unitPrice * item.quantity,
-      0
-    );
-  };
+  const getCartTotal = () =>
+    cart.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
 
   const getDiscountAmount = () => {
-    if (!appliedPromo) return 0;
-    const subtotal = getCartTotal();
-    if (appliedPromo.type === 'PERCENTAGE') {
-      return Math.round(subtotal * (appliedPromo.value / 100));
+    if (!appliedPromo) {
+      return 0;
     }
-    return appliedPromo.value; // FIXED
+
+    const subtotal = getCartTotal();
+    const raw =
+      appliedPromo.type === 'PERCENTAGE'
+        ? Math.round(subtotal * (appliedPromo.value / 100))
+        : appliedPromo.value;
+
+    // Never discount below zero or past the subtotal — a FIXED code worth more
+    // than the cart used to render a negative total. This is display-side only;
+    // the server must clamp again when it starts applying discounts for real.
+    return Math.max(0, Math.min(raw, subtotal));
   };
 
-  const getCartCount = () => {
-    return cart.reduce((count, item) => count + item.quantity, 0);
-  };
+  const getCartCount = () =>
+    cart.reduce((count, item) => count + item.quantity, 0);
 
   return (
     <StoreContext.Provider

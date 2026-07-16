@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template must be tracked, or a fresh clone has no reference for
+# which vars to set. `.env*` above matches `.env.example` too without this.
+!.env.example
 
 # vercel
 .vercel

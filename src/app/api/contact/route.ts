@@ -17,10 +17,12 @@ const payloadSchema = z.object({
   message: z.string().min(1),
 });
 
-const CONTACT_INBOX_EMAIL =
-  process.env.CONTACT_INBOX_EMAIL ?? "tankenneth207@gmail.com";
-const CONTACT_FROM_EMAIL =
-  process.env.CONTACT_FROM_EMAIL ?? "Reverie Revival <no-reply@example.com>";
+// No fallbacks on purpose. These used to default to a personal Gmail and to
+// no-reply@example.com, which meant a missing env var silently routed real
+// customer messages (name, email, phone, body) to a personal inbox from an
+// unowned domain. Unset now means "don't send", which is loud and safe.
+const CONTACT_INBOX_EMAIL = process.env.CONTACT_INBOX_EMAIL;
+const CONTACT_FROM_EMAIL = process.env.CONTACT_FROM_EMAIL;
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT ?? 465);
 const SMTP_USER = process.env.SMTP_USER;
@@ -40,7 +42,19 @@ async function sendContactEmail(message: {
     message.body,
   ];
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (
+    !SMTP_HOST ||
+    !SMTP_USER ||
+    !SMTP_PASS ||
+    !CONTACT_INBOX_EMAIL ||
+    !CONTACT_FROM_EMAIL
+  ) {
+    // The message itself is already saved to ContactMessage and visible in
+    // /admin/messages, so nothing is lost — but nobody gets notified. Log it so
+    // a misconfigured deploy is diagnosable instead of silently swallowing mail.
+    console.error(
+      "Contact email not sent: SMTP_HOST/SMTP_USER/SMTP_PASS/CONTACT_INBOX_EMAIL/CONTACT_FROM_EMAIL must all be set."
+    );
     return { sent: false, reason: "missing_smtp_config" };
   }
 
@@ -143,9 +157,10 @@ export async function POST(request: Request) {
     body: created.message,
   });
 
+  // The message is persisted either way, so this is a success from the sender's
+  // point of view. `reason` stays server-side — it's internal detail.
   return NextResponse.json({
     ok: true,
     emailSent: emailResult.sent,
-    debugError: emailResult.sent ? undefined : emailResult.reason,
   });
 }

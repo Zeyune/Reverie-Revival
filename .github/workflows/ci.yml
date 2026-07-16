@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch makes the in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    # A throwaway Postgres per run. The inventory tests are integration tests
+    # against a real engine on purpose — the race they cover only exists in one —
+    # but they create and delete rows, so they must never point at Supabase.
+    # This also means CI needs no database secret at all.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: reverie_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/reverie_test
+      # Read at module scope by the contact route. Never used to send: no SMTP_*
+      # vars are set here, so sendContactEmail short-circuits before connecting.
+      CONTACT_INBOX_EMAIL: ci@example.test
+      CONTACT_FROM_EMAIL: "Reverie Revival CI <ci@example.test>"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # postinstall runs `prisma generate`, so the client exists after this.
+      - name: Install
+        run: npm ci
+
+      # Creates the schema in the throwaway Postgres. Once migrations are
+      # baselined (PLAN 5.1) this becomes `prisma migrate deploy`, which also
+      # starts verifying that the migrations themselves apply cleanly.
+      - name: Prepare test database
+        run: npx prisma db push --skip-generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Not cosmetic. rules-of-hooks and the React Compiler memoization rule
+      # would each have caught a real Phase 0 bug on their own — the tooling was
+      # always there, nothing ever ran it. That's what this step is for.
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

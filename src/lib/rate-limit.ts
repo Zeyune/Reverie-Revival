@@ -31,13 +31,55 @@ type AdminLoginContext = {
 
 const cleanKey = (value: string) => value.trim().toLowerCase();
 
+/**
+ * Single-value headers written by the edge itself. A client can set them, but
+ * the platform overwrites them before we see the request, so they can't be
+ * forged. Checked ahead of X-Forwarded-For.
+ */
+const TRUSTED_IP_HEADERS = [
+  "x-vercel-forwarded-for",
+  "cf-connecting-ip",
+  "fly-client-ip",
+  "fastly-client-ip",
+  "x-real-ip",
+] as const;
+
+/**
+ * X-Forwarded-For is `client, proxy1, proxy2, ...` — each hop APPENDS the
+ * address it saw the connection come from. Everything to the left of our own
+ * edge's entry was supplied by the caller.
+ *
+ * Take the rightmost entry, never the leftmost. Trusting the leftmost lets a
+ * client rotate `X-Forwarded-For: 1.2.3.4` per request so the `ip:` bucket
+ * never accumulates, and lets them pin a *victim's* IP to burn that victim's
+ * quota and lock them out.
+ *
+ * Rightmost is correct for exactly one trusted proxy in front of the app, which
+ * is our deployment (Vercel). Behind N proxies this needs to be the Nth entry
+ * from the right instead.
+ */
 const normalizeIp = (value: string | null) => {
   if (!value) {
     return null;
   }
 
-  const first = value.split(",")[0]?.trim();
-  return first || null;
+  const hops = value
+    .split(",")
+    .map((hop) => hop.trim())
+    .filter(Boolean);
+
+  return hops.at(-1) ?? null;
+};
+
+const resolveClientIp = (request: Request) => {
+  for (const header of TRUSTED_IP_HEADERS) {
+    const value = request.headers.get(header);
+    if (value?.trim()) {
+      return normalizeIp(value);
+    }
+  }
+
+  return normalizeIp(request.headers.get("x-forwarded-for"));
 };
 
 const summarizeResults = (results: RateLimitStatus[]) => {
@@ -157,17 +199,7 @@ export function getRequestRateLimitContext(request: Request): RequestRateLimitCo
   const host = request.headers.get("host")?.trim().toLowerCase() ?? "unknown";
   const isOnion = host.endsWith(".onion");
 
-  const ipAddress = isOnion
-    ? null
-    : normalizeIp(
-        [
-          request.headers.get("x-forwarded-for"),
-          request.headers.get("x-real-ip"),
-          request.headers.get("cf-connecting-ip"),
-          request.headers.get("fly-client-ip"),
-          request.headers.get("fastly-client-ip"),
-        ].find(Boolean) ?? null
-      );
+  const ipAddress = isOnion ? null : resolveClientIp(request);
 
   return {
     host,
@@ -176,16 +208,36 @@ export function getRequestRateLimitContext(request: Request): RequestRateLimitCo
   };
 }
 
+/**
+ * Fallback limits, used when a caller doesn't override them.
+ *
+ * These used to be Infinity, which made the whole limiter opt-in: a caller that
+ * forgot to `.map()` an override got no limiting at all and no warning. The
+ * defaults below fail closed instead.
+ *
+ * They're per-rule-type on purpose. A single global default can't work: every
+ * request to the site shares the one `host:` key, so a default tight enough to
+ * be useful for `ip:` would take the whole site down.
+ */
+const DEFAULT_LIMITS = {
+  /** Coarse last-resort ceiling — every request shares this key. */
+  host: 1000,
+  /** Per-client. Callers doing anything expensive should lower this. */
+  ip: 60,
+  /** Caller-supplied keys (email, session, …) — usually the tightest. */
+  extra: 30,
+} as const;
+
 export function buildNetworkRateLimitRules(
   context: RequestRateLimitContext,
   extraKeys: string[] = []
 ) {
   const rules: RateLimitRule[] = [
-    { key: `host:${cleanKey(context.host)}`, limit: Infinity },
+    { key: `host:${cleanKey(context.host)}`, limit: DEFAULT_LIMITS.host },
   ];
 
   if (context.ipAddress) {
-    rules.push({ key: `ip:${context.ipAddress}`, limit: Infinity });
+    rules.push({ key: `ip:${context.ipAddress}`, limit: DEFAULT_LIMITS.ip });
   }
 
   for (const extraKey of extraKeys) {
@@ -193,7 +245,7 @@ export function buildNetworkRateLimitRules(
       continue;
     }
 
-    rules.push({ key: cleanKey(extraKey), limit: Infinity });
+    rules.push({ key: cleanKey(extraKey), limit: DEFAULT_LIMITS.extra });
   }
 
   return rules;

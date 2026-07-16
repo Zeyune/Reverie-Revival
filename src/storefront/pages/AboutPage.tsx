@@ -50,7 +50,7 @@ export const AboutPage: React.FC = () => {
               Reverie Revival was born from a simple yet powerful idea: to create streetwear that bridges the gap between aspiration and reality. We believe that what you wear should empower you to pursue your dreams with confidence and attitude.
             </p>
             <p>
-              Every piece in our collection is designed with intention—combining premium materials, minimalist aesthetics, and bold street attitude. We don't just make clothes; we create statements that help you awaken your dream and rewrite your reality.
+              Every piece in our collection is designed with intention—combining premium materials, minimalist aesthetics, and bold street attitude. We don&apos;t just make clothes; we create statements that help you awaken your dream and rewrite your reality.
             </p>
           </div>
         </div>
@@ -99,7 +99,7 @@ export const AboutPage: React.FC = () => {
                 BOLD ATTITUDE
               </h3>
               <p className="text-white/70 leading-relaxed">
-                Streetwear is more than fashion—it's a mindset. We create pieces that help you express your confidence and individuality.
+                Streetwear is more than fashion—it&apos;s a mindset. We create pieces that help you express your confidence and individuality.
               </p>
             </div>
           </div>
