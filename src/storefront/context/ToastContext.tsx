@@ -59,7 +59,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
           <div
             key={toast.id}
             className={`max-w-xs border bg-[#121214]/95 px-4 py-3 text-sm tracking-[0.1em] shadow-[0_10px_30px_rgba(0,0,0,0.35)] ${variantStyles[toast.variant]}`}
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             {toast.message}
           </div>

@@ -48,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigate })
           className={`absolute top-4 left-4 z-10 px-3 py-1 tracking-[0.2em] ${
             product.badge === 'sale' ? 'bg-[#E10613]' : 'bg-white text-[#0B0B0C]'
           }`}
-          style={{ fontFamily: "'Poppins', sans-serif" }}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
         >
           {product.badge === 'sale' ? 'SALE' : 'NEW'}
         </div>
@@ -80,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigate })
           <button
             onClick={handleQuickAdd}
             className="px-6 py-3 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300 flex items-center gap-2"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             <ShoppingCart className="w-4 h-4" />
             QUICK ADD
@@ -92,7 +92,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigate })
       <div className="p-4">
         <h3
           className="mb-2 tracking-[0.1em] truncate"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
         >
           {product.name}
         </h3>

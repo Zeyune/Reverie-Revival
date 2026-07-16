@@ -157,7 +157,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 className={`inline-block px-4 py-1 tracking-[0.2em] ${
                   product.badge === 'sale' ? 'bg-[#E10613]' : 'bg-white text-[#0B0B0C]'
                 }`}
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 {product.badge === 'sale' ? 'SALE' : 'NEW'}
               </div>
@@ -168,7 +168,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <h1
                 className="mb-4 tracking-[0.15em]"
                 style={{
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "var(--font-poppins), sans-serif",
                   fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
                 }}
               >
@@ -193,7 +193,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <div>
               <label
                 className="block mb-3 tracking-[0.15em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 COLOR: {selectedColor}
               </label>
@@ -217,7 +217,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <label
                   className="tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   SIZE: {selectedSize}
                 </label>
@@ -235,7 +235,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         ? 'bg-white text-[#0B0B0C] border-white'
                         : 'border-white/30 hover:border-white/60'
                     }`}
-                    style={{ fontFamily: "'Poppins', sans-serif" }}
+                    style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                   >
                     {size}
                   </button>
@@ -246,7 +246,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   type="button"
                   onClick={handleClearVariants}
                   className="text-xs tracking-[0.25em] text-white/60 underline hover:text-white transition-colors"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   CLEAR VARIANTS
                 </button>
@@ -257,7 +257,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <div>
               <label
                 className="block mb-3 tracking-[0.15em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 QUANTITY
               </label>
@@ -283,7 +283,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <button
                 onClick={handleAddToCart}
                 className="w-full py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 <ShoppingCart className="w-5 h-5" />
                 ADD TO CART
@@ -295,7 +295,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     ? 'border-[#E10613] text-[#E10613]'
                     : 'border-white/30 hover:border-white/60'
                 }`}
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 <Heart className={isWishlisted ? 'fill-[#E10613]' : ''} />
                 {isWishlisted ? 'IN WISHLIST' : 'ADD TO WISHLIST'}
@@ -335,7 +335,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               >
                 <span
                   className="tracking-[0.2em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   {section.title}
                 </span>
@@ -360,7 +360,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <h2
               className="mb-8 text-center tracking-[0.3em]"
               style={{
-                fontFamily: "'Poppins', sans-serif",
+                fontFamily: "var(--font-poppins), sans-serif",
                 fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
               }}
             >

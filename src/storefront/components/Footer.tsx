@@ -14,13 +14,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h3
               className="mb-4 tracking-[0.3em]"
-              style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.25rem' }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif", fontSize: '1.25rem' }}
             >
               REVERIE REVIVAL
             </h3>
             <p
               className="mb-4 text-white/60"
-              style={{ fontFamily: "'Allura', cursive", fontSize: '1.25rem' }}
+              style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.25rem' }}
             >
               Awaken Your Dream
             </p>
@@ -33,7 +33,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h4
               className="mb-4 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               QUICK LINKS
             </h4>
@@ -77,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h4
               className="mb-4 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               CUSTOMER SERVICE
             </h4>
@@ -104,7 +104,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h4
               className="mb-4 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               CONTACT US
             </h4>
@@ -134,7 +134,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Social & Copyright */}
         <div className="pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-white/60 tracking-[0.1em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <p className="text-white/60 tracking-[0.1em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
               © 2024 REVERIE REVIVAL. ALL RIGHTS RESERVED.
             </p>
             <div className="flex items-center gap-4">

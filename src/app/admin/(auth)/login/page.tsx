@@ -124,7 +124,7 @@ export default async function AdminLoginPage({
           </p>
           <h1
             className="mt-4 text-2xl tracking-[0.2em]"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             ADMIN LOGIN
           </h1>
@@ -140,7 +140,7 @@ export default async function AdminLoginPage({
           <div>
             <label
               className="block text-xs tracking-[0.25em] text-white/70"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               EMAIL
             </label>
@@ -154,7 +154,7 @@ export default async function AdminLoginPage({
           <div>
             <label
               className="block text-xs tracking-[0.25em] text-white/70"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               PASSWORD
             </label>
@@ -168,7 +168,7 @@ export default async function AdminLoginPage({
           <button
             type="submit"
             className="w-full bg-white py-3 text-sm tracking-[0.3em] text-[#0B0B0C] transition-colors hover:bg-[#E10613] hover:text-white"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             SIGN IN
           </button>

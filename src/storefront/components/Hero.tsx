@@ -1,6 +1,10 @@
 import React from 'react';
 
-const posterImage = "/assets/a90825419248c95d26b754e8e623a043995ebcd1.png";
+// Grayscale WebP, 40 KB (was a 364 KB PNG — a photo in a format meant for
+// graphics). Pre-grayscaled at the source because the CSS filter below throws
+// the colour away anyway, so storing three channels was paying to ship data
+// that never reaches a pixel.
+const posterImage = "/assets/hero-poster.webp";
 
 interface HeroProps {
   onNavigate: (page: string) => void;
@@ -9,14 +13,29 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background with texture */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-30"
-        style={{ 
-          backgroundImage: `url(${posterImage})`,
-          filter: 'grayscale(100%) contrast(120%)',
-        }}
+      {/*
+        Background with texture.
+
+        An <img>, not a CSS background-image, and that distinction is the whole
+        reason this page was slow. The browser's preload scanner reads the raw
+        HTML bytes and can start fetching an <img> immediately — it cannot see a
+        URL buried in a style attribute, which it only discovers after the DOM is
+        built and styles are computed. As a background this was the LCP element
+        and spent ~4s in "load delay" doing nothing at all.
+
+        fetchPriority="high" says "this is the hero, not a footer icon" — without
+        it the browser deprioritises images until layout says they're visible.
+        alt="" marks it decorative so screen readers skip it.
+      */}
+      <img
+        src={posterImage}
+        alt=""
+        fetchPriority="high"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover object-center opacity-30"
+        style={{ filter: 'grayscale(100%) contrast(120%)' }}
       />
+
       
       {/* Noise overlay */}
       <div className="absolute inset-0 opacity-[0.03]"
@@ -31,7 +50,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         <h1 
           className="mb-6 tracking-[0.4em] animate-fadeIn"
           style={{ 
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-poppins), sans-serif",
             fontSize: 'clamp(2rem, 8vw, 6rem)',
             fontWeight: 900,
             textShadow: '0 0 30px rgba(255,255,255,0.1)',
@@ -44,7 +63,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         <p 
           className="mb-12 text-white/90 animate-fadeIn delay-200"
           style={{ 
-            fontFamily: "'Allura', cursive",
+            fontFamily: "var(--font-allura), cursive",
             fontSize: 'clamp(1.75rem, 4vw, 3.5rem)',
             textShadow: '0 0 20px rgba(255,255,255,0.2)',
           }}
@@ -57,7 +76,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
           <button
             onClick={() => onNavigate('new-drop')}
             className="group relative px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] overflow-hidden transition-all duration-300 hover:tracking-[0.3em]"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             <span className="relative z-10">SHOP NEW DROP</span>
             <div className="absolute inset-0 bg-[#E10613] transform translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -69,7 +88,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
           <button
             onClick={() => onNavigate('shop')}
             className="px-8 py-4 border-2 border-white text-white tracking-[0.2em] hover:bg-white hover:text-[#0B0B0C] transition-all duration-300 hover:tracking-[0.3em]"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             BROWSE ALL
           </button>
@@ -77,7 +96,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         
         {/* Est. Badge */}
         <div className="mt-16 animate-fadeIn delay-600">
-          <p className="tracking-[0.3em] opacity-60" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <p className="tracking-[0.3em] opacity-60" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
             EST. 2024
           </p>
         </div>

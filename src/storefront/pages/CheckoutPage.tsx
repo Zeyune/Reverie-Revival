@@ -311,7 +311,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
           <h2
             className="mb-4 tracking-[0.2em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2rem)',
             }}
           >
@@ -328,7 +328,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
           <button
             onClick={() => onNavigate('home')}
             className="px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             CONTINUE SHOPPING
           </button>
@@ -343,7 +343,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
         <h1
           className="mb-12 text-center tracking-[0.3em]"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-poppins), sans-serif",
             fontSize: 'clamp(2rem, 4vw, 3rem)',
           }}
         >
@@ -360,7 +360,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
               >
                 1
               </div>
-              <span className="ml-2 tracking-[0.1em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <span className="ml-2 tracking-[0.1em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
                 SHIPPING
               </span>
             </div>
@@ -372,7 +372,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
               >
                 2
               </div>
-              <span className="ml-2 tracking-[0.1em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <span className="ml-2 tracking-[0.1em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
                 PAYMENT
               </span>
             </div>
@@ -390,7 +390,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                     <Truck className="w-6 h-6" />
                     <h2
                       className="tracking-[0.2em]"
-                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                      style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                     >
                       SHIPPING INFORMATION
                     </h2>
@@ -560,7 +560,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                     type="button"
                     onClick={() => setCurrentStep(2)}
                     className="mt-6 w-full py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-                    style={{ fontFamily: "'Poppins', sans-serif" }}
+                    style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                   >
                     CONTINUE TO PAYMENT
                   </button>
@@ -577,7 +577,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                     <CreditCard className="w-6 h-6" />
                     <h2
                       className="tracking-[0.2em]"
-                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                      style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                     >
                       PAYMENT INFORMATION
                     </h2>
@@ -636,7 +636,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                       type="button"
                       onClick={() => setCurrentStep(1)}
                       className="flex-1 py-4 border border-white/30 tracking-[0.2em] hover:bg-white hover:text-[#0B0B0C] transition-all duration-300"
-                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                      style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                     >
                       BACK
                     </button>
@@ -644,7 +644,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                       type="submit"
                       disabled={isSubmitting}
                       className="flex-1 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                      style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                     >
                       {isSubmitting ? 'PLACING ORDER...' : 'PLACE ORDER'}
                     </button>
@@ -661,7 +661,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
               <div className="bg-[#121214] border border-white/10 p-6 sticky top-24">
                 <h2
                   className="mb-6 tracking-[0.2em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   ORDER SUMMARY
                 </h2>
@@ -700,7 +700,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="tracking-[0.15em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  <span className="tracking-[0.15em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
                     TOTAL
                   </span>
                   <span>{formatPrice(total)}</span>

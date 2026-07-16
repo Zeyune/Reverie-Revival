@@ -191,7 +191,7 @@ export default async function OrderDetailPage({
       <div>
         <h1
           className="text-2xl tracking-[0.2em]"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
         >
           ORDER #{order.orderNumber}
         </h1>

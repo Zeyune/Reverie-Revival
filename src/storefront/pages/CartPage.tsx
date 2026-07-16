@@ -34,7 +34,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
           <h2
             className="mb-4 tracking-[0.2em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2rem)',
             }}
           >
@@ -44,7 +44,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
           <button
             onClick={() => onNavigate('shop')}
             className="px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             SHOP NOW
           </button>
@@ -59,7 +59,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
         <h1
           className="mb-12 text-center tracking-[0.3em]"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-poppins), sans-serif",
             fontSize: 'clamp(2rem, 4vw, 3rem)',
           }}
         >
@@ -97,7 +97,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
                         >
                           <h3
                             className="tracking-[0.1em]"
-                            style={{ fontFamily: "'Poppins', sans-serif" }}
+                            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                           >
                             {item.product.name}
                           </h3>
@@ -167,7 +167,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
             <div className="bg-[#121214] border border-white/10 p-6 sticky top-24">
               <h2
                 className="mb-6 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 ORDER SUMMARY
               </h2>
@@ -197,7 +197,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
               <div className="mb-6">
                 <label
                   className="block mb-2 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   PROMO CODE
                 </label>
@@ -228,7 +228,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
 
               <div className="mb-6 pb-6 border-b border-white/10">
                 <div className="flex justify-between">
-                  <span className="tracking-[0.15em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  <span className="tracking-[0.15em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
                     TOTAL
                   </span>
                   <span>{formatPrice(total)}</span>
@@ -238,7 +238,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
               <button
                 onClick={() => onNavigate('checkout')}
                 className="w-full py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300 mb-3"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 PROCEED TO CHECKOUT
               </button>
@@ -246,7 +246,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
               <button
                 onClick={() => onNavigate('shop')}
                 className="w-full py-4 border border-white/30 tracking-[0.2em] hover:bg-white hover:text-[#0B0B0C] transition-all duration-300"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 CONTINUE SHOPPING
               </button>

@@ -8,22 +8,27 @@ interface HomePageProps {
   onNavigate: (page: string, productId?: string) => void;
   products: StorefrontProduct[];
   categories: StorefrontCategory[];
-  isLoading?: boolean;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   onNavigate,
   products,
   categories,
-  isLoading,
 }) => {
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white/60">
-        Loading products...
-      </div>
-    );
-  }
+  // Deliberately NOT gated on isLoading.
+  //
+  // This used to return "Loading products..." on a blank screen until the
+  // catalog fetch resolved, which meant the Hero — the largest element on the
+  // page, and the one that has nothing to do with products — only rendered
+  // after the JS bundle downloaded, React hydrated, and Supabase answered. The
+  // hero image sat behind a database round-trip: ~4s of LCP "load delay".
+  //
+  // Rendering unconditionally puts the Hero in the server HTML, so the preload
+  // scanner finds its <img> in the first bytes and starts fetching immediately.
+  //
+  // The three product-dependent sections below are all beneath a 90vh hero, so
+  // they fill in off-screen and cost no layout shift. `products` starts as [],
+  // so these are safe before the fetch lands.
   const newArrivals = products.filter((p) => p.badge === 'new').slice(0, 4);
   const bestSellers = products.slice(0, 8);
 
@@ -37,7 +42,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <h2
             className="text-center mb-4 tracking-[0.3em]"
             style={{ 
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -45,7 +50,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h2>
           <p
             className="text-center mb-12 text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '1.75rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
           >
             Find your style
           </p>
@@ -61,7 +66,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div className="absolute inset-0 flex items-center justify-center z-20">
                   <span
                     className="tracking-[0.2em] group-hover:tracking-[0.3em] transition-all duration-300"
-                    style={{ fontFamily: "'Poppins', sans-serif" }}
+                    style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                   >
                     {category.name.toUpperCase()}
                   </span>
@@ -80,7 +85,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <h2
                 className="mb-2 tracking-[0.3em]"
                 style={{ 
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "var(--font-poppins), sans-serif",
                   fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
                 }}
               >
@@ -88,7 +93,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               </h2>
               <p
                 className="text-white/60"
-                style={{ fontFamily: "'Allura', cursive", fontSize: '1.5rem' }}
+                style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.5rem' }}
               >
                 Fresh drops
               </p>
@@ -96,7 +101,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <button
               onClick={() => onNavigate('new-drop')}
               className="px-6 py-3 border border-white/30 tracking-[0.2em] hover:bg-white hover:text-[#0B0B0C] transition-all duration-300"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               VIEW ALL
             </button>
@@ -116,7 +121,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <h2
             className="text-center mb-4 tracking-[0.3em]"
             style={{ 
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -124,7 +129,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h2>
           <p
             className="text-center mb-12 text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '1.75rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
           >
             Customer favorites
           </p>
@@ -143,7 +148,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <h2
             className="mb-6 tracking-[0.3em]"
             style={{ 
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -151,7 +156,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h2>
           <p
             className="mb-8 text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '2rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '2rem' }}
           >
             Where dreams meet reality
           </p>
@@ -162,7 +167,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <p>
               Each garment is carefully crafted to empower you to awaken your dream and rewrite your reality. Our commitment to premium quality, minimalist design, and bold attitude defines everything we do.
             </p>
-            <p className="tracking-[0.2em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <p className="tracking-[0.2em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
               EST. 2024 — PAMPANGA, PHILIPPINES
             </p>
           </div>
@@ -175,7 +180,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <h2
             className="text-center mb-4 tracking-[0.3em]"
             style={{ 
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -183,7 +188,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h2>
           <p
             className="text-center mb-12 text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '1.75rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
           >
             Real feedback, real people
           </p>
@@ -202,7 +207,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <p className="text-white/80 mb-4 leading-relaxed">{testimonial.text}</p>
                 <p
                   className="tracking-[0.1em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   — {testimonial.name}
                 </p>
@@ -218,7 +223,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <h2
             className="mb-4 tracking-[0.3em]"
             style={{ 
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -226,7 +231,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h2>
           <p
             className="mb-8 text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '1.75rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
           >
             Be the first to know
           </p>
@@ -242,7 +247,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             />
             <button
               className="px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               <Mail className="w-4 h-4" />
               SUBSCRIBE
@@ -250,7 +255,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
           
           <div className="inline-block px-4 py-2 bg-[#E10613] tracking-[0.15em]">
-            <span style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
               GET 10% OFF YOUR FIRST ORDER
             </span>
           </div>

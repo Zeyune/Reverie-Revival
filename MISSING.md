@@ -200,9 +200,14 @@ Working tracker. Check off items as they get done.
       so it won't throw — the duplicate just comes back blanked with its category reset.
 - [ ] **`next/image` is used zero times** — every image is a raw `<img>` (`ProductCard.tsx:72`,
       `ProductDetailPage.tsx:125,141`, `CartPage.tsx:83`, `CheckoutPage.tsx:673`) pulling remote
-      1080px Unsplash URLs into 64×80px cart thumbnails. No width/height → CLS on every card.
+      1080px Unsplash URLs into 64×80px cart thumbnails. That's a **bandwidth and LCP** cost.
       `next.config.ts` has no `remotePatterns`, so **the moment anyone swaps in `next/image` every
-      remote host throws**.
+      remote host throws** — do that config first.
+      > **Correction:** an earlier pass of this file claimed "no width/height → CLS on every card".
+      > **That was wrong, and it was measured wrong.** Lighthouse reports **CLS = 0** on both mobile
+      > and desktop. Every image already sits in a reserved box (`aspect-[3/4]` on cards and the
+      > product page, `w-32 h-40` in the cart, `w-16 h-20` at checkout), so nothing shifts when they
+      > load. Switch to `next/image` for **weight**, not for layout stability.
 - [ ] **Cart stores whole product objects** — `storefront/lib/store.ts` serializes the full product
       (all image URLs, description) per line item, with prices frozen at add-time. The server
       re-snapshots authoritative prices (`checkout/route.ts:177`), so the risk is a **silent price

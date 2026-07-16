@@ -23,7 +23,7 @@ export default async function NewProductPage() {
       <div>
         <h1
           className="text-2xl tracking-[0.2em]"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
         >
           NEW PRODUCT
         </h1>

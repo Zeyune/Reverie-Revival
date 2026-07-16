@@ -130,7 +130,7 @@ export default async function PromoCodesPage({
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl tracking-[0.2em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                <h1 className="text-2xl tracking-[0.2em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
                     PROMO CODES
                 </h1>
                 <p className="mt-2 text-sm text-white/60">Manage discount codes for the store.</p>

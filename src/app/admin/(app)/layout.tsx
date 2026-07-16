@@ -34,7 +34,7 @@ export default async function AdminLayout({
             </p>
             <h1
               className="mt-2 text-lg tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               ADMIN
             </h1>
@@ -45,7 +45,7 @@ export default async function AdminLayout({
                 key={item.href}
                 href={item.href}
                 className="block rounded-md px-4 py-2 text-sm tracking-[0.2em] text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 {item.label}
               </Link>
@@ -71,7 +71,7 @@ export default async function AdminLayout({
                 <button
                   type="submit"
                   className="rounded-md border border-white/20 px-4 py-2 text-xs tracking-[0.2em] text-white/70 transition-colors hover:border-white/60 hover:text-white"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   LOG OUT
                 </button>

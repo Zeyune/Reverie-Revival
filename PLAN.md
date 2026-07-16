@@ -12,6 +12,45 @@ Sizes are relative: **S** = an afternoon · **M** = a day or two · **L** = a we
 
 ---
 
+## Standing constraint: keep Lighthouse at 100
+
+**The goal is a perfect score now, and 100 maintained as the site grows.** This is not a phase — it
+is a constraint on every phase. Phase 1 decides what renders on the server, Phase 2 decides what
+payment SDK enters the bundle, Phase 4 decides how images are served. Each of those can quietly
+spend the budget.
+
+**Measured baseline (2026-07-16, live site, Lighthouse 12):**
+
+| | Mobile | Desktop |
+|---|---|---|
+| **Performance** | **70** | **90** |
+| LCP | 5.5 s → **−21 pts** | 1.6 s → −6 pts |
+| Speed Index | 5.8 s → −5 pts | 2.1 s → −4 pts |
+| FCP | 2.7 s → −4 pts | 0.7 s → 0 |
+| TBT | 70 ms → 0 | 0 ms → 0 |
+| **CLS** | **0 → perfect** | **0 → perfect** |
+
+Two things to take from that table before optimising anything:
+
+1. **CLS is already 0 on both.** Nothing to fix. The images all sit in aspect-ratio/fixed-size
+   boxes, the cart badge is absolutely positioned, and `next/font` handles the font metrics. Any
+   claim that this site has a layout-shift problem is wrong — it was measured.
+2. **Essentially the whole deficit is LCP**, and LCP is one root cause (Phase 0.5 below).
+
+**How it gets maintained: 5.10 (Lighthouse CI), not discipline.** A score you check by hand rots —
+and it rots faster than lint, because every feature makes it slightly worse. The same lesson as
+`rules-of-hooks`: the tool existed, nobody ran it. Automate it or lose it.
+
+**Two honest caveats to hold onto:**
+- **Lighthouse is noisy** (±2-3 points run to run). "100" is often "99 on a bad run". Budget on
+  individual metrics with headroom, never on the aggregate score, or CI will fail randomly and get
+  switched off within a week.
+- **This is a lab score.** PSI reports *"No Data"* for real users — not enough traffic yet. A green
+  lab score is a proxy for customer experience, not proof of it. Revisit with Vercel Speed Insights
+  once there's traffic.
+
+---
+
 ## The one dependency that drives the order
 
 **Routing must land before payments.** PayMongo's GCash flow is a *redirect*: the customer leaves
@@ -81,9 +120,89 @@ for the last unit produce exactly one order and `stockQty: 0`, never `-1`.
 
 ---
 
+## Phase 0.5 — Performance: fix LCP · **S** · ✅ DONE (2026-07-16), pending a deploy re-measure
+
+**Measured result (local production build, Lighthouse 12):**
+
+| | Mobile | Desktop |
+|---|---|---|
+| Before (live site) | 70 | 90 |
+| **After** | **95** | **100** ✅ |
+
+What actually moved, and it's the phase data that proves the diagnosis was right:
+
+| Metric | Before | After |
+|---|---|---|
+| **LCP load delay** | **3,954 ms** | **0 ms** ✅ |
+| LCP load time | 863 ms | 395 ms |
+| Speed Index (mobile) | 5.8 s (score 50) | **0.8 s (perfect)** |
+| FCP (mobile) | 2.7 s (score 60) | **0.8 s (perfect)** |
+| CLS | 0 | **0 — unchanged** ✅ |
+| Hero image | 364 KB PNG | **40 KB WebP (−89%)** |
+| Preloaded fonts | 8 files | 5 files |
+| Google Fonts requests | 2 render-blocking | **0 (self-hosted)** |
+
+> ⚠️ **These are localhost numbers and therefore optimistic.** Localhost has no network, so TTFB is
+> near zero; the live site measured 657 ms (mobile) / 222 ms (desktop) of TTFB that these runs don't
+> pay. Expect the deployed scores to land a few points lower — **re-measure against Vercel after
+> pushing** and replace this table with the real figures.
+
+**The remaining 5 points on mobile are a Phase 1 problem, not a missed trick here.** LCP is now 2.9s
+and its breakdown has inverted: load delay is gone, but **render delay is 2,064 ms (71%)**. The hero
+image arrives at ~860 ms and then waits for the main thread — 373 ms of script evaluation, ×4 under
+Lighthouse's mobile CPU throttle — because the entire storefront is a client-side bundle that has to
+hydrate before anything paints. **Less client JS is the fix, and that is Phase 1.**
+
+Independent of routing. Three of these four survive Phase 1 untouched; only 0.5c gets superseded,
+and it's a three-line change — so this is worth doing now rather than waiting.
+
+**The diagnosis, from the LCP phase breakdown (mobile):**
+
+| Phase | Time | Share |
+|---|---|---|
+| TTFB | 657 ms | 12% |
+| **Load Delay** | **3,954 ms** | **71%** |
+| Load Time | 863 ms | 16% |
+| Render Delay | 62 ms | 1% |
+
+**"Load Delay" is time the browser doesn't yet know the image exists.** The LCP element is the hero
+background — a **364 KB PNG** applied as a CSS `background-image` (`Hero.tsx:16`). Confirmed against
+the served HTML: `assets`, `a908`, `.png`, and `bg-cover` all appear **zero** times. So the chain is:
+
+```
+HTML (no hero) → JS bundle → hydrate → fetch /api/storefront/products
+  → Supabase responds → isLoading=false → Hero renders → browser finally sees the image → 364 KB
+```
+
+**The hero image — which has nothing to do with products — is blocked on a database round-trip.**
+
+| # | Task | Why |
+|---|---|---|
+| 0.5a | Convert the 364 KB PNG to WebP/AVIF (`sharp` is already installed). Keep the PNG as a fallback only if needed. | Lighthouse: **saves 318 KB**. It's a decorative backdrop at `opacity-30` — it does not need to be lossless. Attacks *Load Time*. |
+| 0.5b | Move Poppins + Allura from the `@import url(fonts.googleapis.com)` at `globals.css:1-2` into `next/font/google`. Drop **Geist Sans** — 52 KB of woff2 is preloaded but the body font is Poppins (`globals.css:225`, 118 usages). Keep Geist Mono (3 admin tables use `font-mono`). | The `@import` is **render-blocking: 905 ms**, plus 309 ms of preconnect to two Google origins. `next/font` self-hosts at build time — no external request at all. Attacks *FCP* and *Speed Index*. |
+| 0.5c | Render the Hero regardless of `isLoading` — remove the early return at `HomePage.tsx:20`. | The Hero doesn't use products. This takes the API call off its critical path **and is the Speed Index fix**: above-the-fold currently paints nothing but "Loading products…". *Superseded by Phase 1, but 3 lines.* |
+| 0.5d | ~~`<link rel="preload">` for the hero~~ → **superseded**: converted the CSS `background-image` to a real `<img>` with `fetchPriority="high"`. | The preload scanner reads raw HTML bytes — it can find an `<img>`, but **never** a URL inside a style attribute. Once 0.5c put the Hero in the server HTML, the `<img>` is discoverable at byte zero and a separate preload link would be a redundant second source of truth to keep in sync. **Load delay: 3,954 ms → 0 ms.** |
+
+**Also done while in there (found by measuring, not planned):**
+- **Poppins trimmed from 6 weights to 4.** Weights 700 and 800 were inherited from the old Google
+  Fonts `@import` and are used by nothing — no `font-bold`, no `<strong>`, no `<b>` in the codebase.
+  Each weight is a separate file that competes with the hero image for bandwidth.
+- **Geist Mono set to `preload: false`.** It's only used by `font-mono` in three admin tables, so
+  preloading it made every storefront visitor pay for a font they'd never see.
+
+**Expected: mobile ~94+, desktop ~96+.** Not a promise — LCP arithmetic gets you there, but Speed
+Index is the wildcard and mobile is throttled to slow 4G with a 4× CPU penalty. **Measure, don't
+predict.** Re-run Lighthouse after and record the real numbers.
+
+**If mobile doesn't reach 100 here, that's expected** — the remaining Speed Index gap needs the
+product grid in the server HTML, which is Phase 1.
+
+---
+
 ## Phase 1 — Real routes · **L**
 
-The big one. Unblocks payments, SEO, sharing, and the back button in a single move.
+The big one. Unblocks payments, SEO, sharing, and the back button in a single move — **and it's the
+rest of the performance story**: server-rendering the catalog is what fixes Speed Index for good.
 
 **1.1 — Build the route tree.** Replace the `switch` in `App.tsx:69-151` with actual App Router
 routes:
@@ -353,6 +472,25 @@ same md5). Revenue, order count, low stock, recent orders.
 
 **5.9 — bcrypt cost 10 → 12** (`seed.ts:41`), raise the 6-char password floor (`login/page.tsx:15`),
 upgrade `bcryptjs` off the 2016 release.
+
+**5.10 — Lighthouse CI — the mechanism that keeps the score at 100.** Do this **after Phase 1**, not
+before: SSR changes the performance profile, so a budget written now just gets rewritten.
+
+Add `@lhci/cli` to the CI workflow. Two decisions that determine whether it survives contact with
+reality:
+
+- **Assert on individual metrics with headroom, not the aggregate score.** `LCP < 1.5s`,
+  `CLS < 0.05`, `TBT < 200ms` is stable. `score >= 100` fails on ±2-3 points of normal noise, and a
+  check that cries wolf gets disabled within a week — at which point you have no budget at all.
+- **Run against a local production build, not the deployed URL.** No network variance, no cold
+  starts, no dependency on a deploy finishing. Far more stable, and it can block the PR that caused
+  the regression rather than telling you after it shipped.
+
+Also add a **bundle-size budget** — Phase 2's payment SDK is exactly the kind of thing that silently
+costs 20 points of TBT.
+
+Once there's real traffic, add **Vercel Speed Insights**: it measures actual customers instead of a
+simulated phone, which is the thing the lab score is only a proxy for.
 
 ---
 

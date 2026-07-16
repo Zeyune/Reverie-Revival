@@ -120,7 +120,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <h1
             className="mb-4 tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(2rem, 4vw, 3.5rem)',
             }}
           >
@@ -128,7 +128,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           </h1>
           <p
             className="text-white/60"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '1.75rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '1.75rem' }}
           >
             Discover your next favorite piece
           </p>
@@ -145,7 +145,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   ? 'bg-white text-[#0B0B0C]'
                   : 'border border-white/30 hover:border-white/60'
               }`}
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               {category.name}
             </button>
@@ -159,7 +159,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             className="flex items-center gap-2 px-4 py-2 border border-white/30 hover:border-white/60 transition-colors"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            <span className="tracking-[0.15em]" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className="tracking-[0.15em]" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
               FILTERS
             </span>
           </button>
@@ -187,7 +187,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <div>
                 <h3
                   className="mb-4 tracking-[0.2em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   SIZE
                 </h3>
@@ -212,7 +212,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <div>
                 <h3
                   className="mb-4 tracking-[0.2em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   COLOR
                 </h3>
@@ -237,7 +237,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <div>
                 <h3
                   className="mb-4 tracking-[0.2em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   PRICE RANGE
                 </h3>

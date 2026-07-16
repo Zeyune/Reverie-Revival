@@ -33,7 +33,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({
           <h2
             className="mb-4 tracking-[0.2em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2rem)',
             }}
           >
@@ -43,7 +43,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({
           <button
             onClick={() => onNavigate('shop')}
             className="px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
             SHOP NOW
           </button>
@@ -58,7 +58,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({
         <h1
           className="mb-4 text-center tracking-[0.3em]"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-poppins), sans-serif",
             fontSize: 'clamp(2rem, 4vw, 3rem)',
           }}
         >

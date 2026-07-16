@@ -52,7 +52,7 @@ export const ContactPage: React.FC = () => {
           <h1
             className="mb-6 tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(2rem, 5vw, 3.5rem)',
             }}
           >
@@ -60,7 +60,7 @@ export const ContactPage: React.FC = () => {
           </h1>
           <p
             className="text-white/70"
-            style={{ fontFamily: "'Allura', cursive", fontSize: '2rem' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: '2rem' }}
           >
             We&apos;d love to hear from you
           </p>
@@ -72,7 +72,7 @@ export const ContactPage: React.FC = () => {
             <Phone className="w-8 h-8 mx-auto mb-4 text-white/60" />
             <h3
               className="mb-3 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               PHONE
             </h3>
@@ -84,7 +84,7 @@ export const ContactPage: React.FC = () => {
             <MapPin className="w-8 h-8 mx-auto mb-4 text-white/60" />
             <h3
               className="mb-3 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               ADDRESS
             </h3>
@@ -96,7 +96,7 @@ export const ContactPage: React.FC = () => {
             <Mail className="w-8 h-8 mx-auto mb-4 text-white/60" />
             <h3
               className="mb-3 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             >
               EMAIL
             </h3>
@@ -109,7 +109,7 @@ export const ContactPage: React.FC = () => {
           <div className="bg-[#121214] border border-white/10 p-8">
             <h2
               className="mb-6 tracking-[0.2em]"
-              style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.5rem' }}
+              style={{ fontFamily: "var(--font-poppins), sans-serif", fontSize: '1.5rem' }}
             >
               SEND US A MESSAGE
             </h2>
@@ -118,7 +118,7 @@ export const ContactPage: React.FC = () => {
                 <label
                   htmlFor="name"
                   className="block mb-2 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   NAME *
                 </label>
@@ -137,7 +137,7 @@ export const ContactPage: React.FC = () => {
                 <label
                   htmlFor="email"
                   className="block mb-2 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   EMAIL *
                 </label>
@@ -156,7 +156,7 @@ export const ContactPage: React.FC = () => {
                 <label
                   htmlFor="phone"
                   className="block mb-2 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   PHONE
                 </label>
@@ -174,7 +174,7 @@ export const ContactPage: React.FC = () => {
                 <label
                   htmlFor="message"
                   className="block mb-2 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   MESSAGE *
                 </label>
@@ -193,7 +193,7 @@ export const ContactPage: React.FC = () => {
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full py-4 bg-white text-[#0B0B0C] tracking-[0.2em] hover:bg-[#E10613] hover:text-white transition-all duration-300"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'}
               </button>
@@ -227,7 +227,7 @@ export const ContactPage: React.FC = () => {
             <div className="bg-[#121214] border border-white/10 p-8">
               <h3
                 className="mb-6 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 STORE HOURS
               </h3>
@@ -251,7 +251,7 @@ export const ContactPage: React.FC = () => {
             <div className="bg-[#121214] border border-white/10 p-8">
               <h3
                 className="mb-4 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 VISIT US IN PERSON
               </h3>
@@ -267,7 +267,7 @@ export const ContactPage: React.FC = () => {
           <h2
             className="mb-12 text-center tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -295,7 +295,7 @@ export const ContactPage: React.FC = () => {
               <div key={index} className="bg-[#121214] border border-white/10 p-6">
                 <h4
                   className="mb-3 tracking-[0.15em]"
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   {faq.q}
                 </h4>

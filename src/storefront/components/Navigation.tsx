@@ -32,7 +32,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate 
             <div className="relative">
               <span
                 className="uppercase tracking-[0.3em] transition-all"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 REVERIE REVIVAL
               </span>
@@ -52,7 +52,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate 
                   className={`tracking-[0.2em] transition-colors ${
                     currentPage === item.page ? 'text-white' : 'text-white/70'
                   } hover:text-white`}
-                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                  style={{ fontFamily: "var(--font-poppins), sans-serif" }}
                 >
                   {item.label}
                 </span>
@@ -132,7 +132,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate 
                     ? 'bg-white/5 text-white'
                     : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 {item.label}
               </button>

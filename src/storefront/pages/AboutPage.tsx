@@ -1,6 +1,6 @@
 import React from 'react';
 
-const posterImage = "/assets/a90825419248c95d26b754e8e623a043995ebcd1.png";
+const posterImage = "/assets/hero-poster.webp";
 
 export const AboutPage: React.FC = () => {
   return (
@@ -18,7 +18,7 @@ export const AboutPage: React.FC = () => {
           <h1
             className="mb-6 tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(2rem, 6vw, 4rem)',
             }}
           >
@@ -26,7 +26,7 @@ export const AboutPage: React.FC = () => {
           </h1>
           <p
             className="text-white/90"
-            style={{ fontFamily: "'Allura', cursive", fontSize: 'clamp(1.75rem, 3vw, 3rem)' }}
+            style={{ fontFamily: "var(--font-allura), cursive", fontSize: 'clamp(1.75rem, 3vw, 3rem)' }}
           >
             Where dreams meet reality
           </p>
@@ -39,7 +39,7 @@ export const AboutPage: React.FC = () => {
           <h2
             className="mb-8 tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -62,7 +62,7 @@ export const AboutPage: React.FC = () => {
           <h2
             className="mb-12 text-center tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -72,7 +72,7 @@ export const AboutPage: React.FC = () => {
             <div className="bg-[#0B0B0C] border border-white/10 p-8 text-center">
               <h3
                 className="mb-4 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 PREMIUM QUALITY
               </h3>
@@ -83,7 +83,7 @@ export const AboutPage: React.FC = () => {
             <div className="bg-[#0B0B0C] border border-white/10 p-8 text-center">
               <h3
                 className="mb-4 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 MINIMAL DESIGN
               </h3>
@@ -94,7 +94,7 @@ export const AboutPage: React.FC = () => {
             <div className="bg-[#0B0B0C] border border-white/10 p-8 text-center">
               <h3
                 className="mb-4 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 BOLD ATTITUDE
               </h3>
@@ -112,7 +112,7 @@ export const AboutPage: React.FC = () => {
           <h2
             className="mb-12 text-center tracking-[0.3em]"
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-poppins), sans-serif",
               fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
             }}
           >
@@ -140,7 +140,7 @@ export const AboutPage: React.FC = () => {
               className="inline-block relative mb-8"
               style={{
                 fontSize: 'clamp(3rem, 8vw, 6rem)',
-                fontFamily: "'Poppins', sans-serif",
+                fontFamily: "var(--font-poppins), sans-serif",
                 fontWeight: 900,
                 letterSpacing: '0.3em',
               }}
@@ -149,7 +149,7 @@ export const AboutPage: React.FC = () => {
             </div>
             <p
               className="text-white/90 mb-8"
-              style={{ fontFamily: "'Allura', cursive", fontSize: 'clamp(1.75rem, 3vw, 3rem)' }}
+              style={{ fontFamily: "var(--font-allura), cursive", fontSize: 'clamp(1.75rem, 3vw, 3rem)' }}
             >
               Awaken Your Dream. Rewrite Reality.
             </p>
@@ -158,7 +158,7 @@ export const AboutPage: React.FC = () => {
             <div className="text-left">
               <h3
                 className="mb-3 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 ESTABLISHED
               </h3>
@@ -167,7 +167,7 @@ export const AboutPage: React.FC = () => {
             <div className="text-left">
               <h3
                 className="mb-3 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 LOCATION
               </h3>
@@ -176,7 +176,7 @@ export const AboutPage: React.FC = () => {
             <div className="text-left">
               <h3
                 className="mb-3 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 AESTHETIC
               </h3>
@@ -185,7 +185,7 @@ export const AboutPage: React.FC = () => {
             <div className="text-left">
               <h3
                 className="mb-3 tracking-[0.2em]"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
+                style={{ fontFamily: "var(--font-poppins), sans-serif" }}
               >
                 PHILOSOPHY
               </h3>
