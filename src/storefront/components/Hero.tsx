@@ -78,9 +78,9 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
             className="group relative px-8 py-4 bg-white text-[#0B0B0C] tracking-[0.2em] overflow-hidden transition-all duration-300 hover:tracking-[0.3em]"
             style={{ fontFamily: "var(--font-poppins), sans-serif" }}
           >
-            <span className="relative z-10">SHOP NEW DROP</span>
+            <span className="relative z-10 opacity-100 group-hover:opacity-0 transition-opacity duration-300">SHOP NEW DROP</span>
             <div className="absolute inset-0 bg-[#E10613] transform translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 tracking-[0.2em]">
+            <span className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               SHOP NEW DROP
             </span>
           </button>

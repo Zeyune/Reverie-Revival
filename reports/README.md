@@ -22,6 +22,22 @@ requiring you to know what a transaction is.
 
 ## Reports
 
+### [2026-08-15 — hero-cta-hover](2026-08-15-hero-cta-hover/)
+**The front page's main button showed its text twice while you hovered it.**
+
+The **SHOP NEW DROP** button flips its label from black to white as the red panel slides up. The white
+copy was fading in, but the black copy was never fading out — so hovering showed both at once. The
+button also widens its letter-spacing on hover, which the black copy followed and the white copy
+didn't, so the two stacked labels visibly drifted apart mid-transition. Both fixed.
+
+> Verified against the compiled stylesheet, **not** in a browser — and the report says why in plain
+> terms. Starting a local server shares a 15-connection budget with the live site, which took
+> production down for ten minutes in July. A hover effect isn't worth that.
+
+📄 [client.md](2026-08-15-hero-cta-hover/client.md) · [dev.md](2026-08-15-hero-cta-hover/dev.md) · [ai.md](2026-08-15-hero-cta-hover/ai.md)
+
+---
+
 ### [2026-07-16 — audit-phase0](2026-07-16-audit-phase0/)
 **Security fixes, safety nets, and a much faster homepage.**
 
@@ -64,6 +80,7 @@ Reports are **history** — what happened on a given day. They aren't trackers. 
 
 | Doc | What it is |
 |---|---|
+| [CHANGELOG.md](../CHANGELOG.md) | Every change, newest first, each with the **why**. Started 2026-08-15; earlier work is in these reports |
 | [MISSING.md](../MISSING.md) | What's still broken or missing, ranked by severity |
 | [PLAN.md](../PLAN.md) | How to fix it, in phases, with the decisions behind the order |
 | [MISSING-ARCHIVE.md](../MISSING-ARCHIVE.md) | Done / wrong / rejected items, kept so they aren't re-raised |
